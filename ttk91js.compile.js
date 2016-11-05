@@ -103,7 +103,7 @@ function prepare(code) {
 
 		if(parts[0] == 'DC') {
 			data.pop();
-			data.push(parts[1]);
+			data.push(parseInt(parts[1]));
 		} else {
 			if(parts.length == 3) {
 				if(parts[1][parts[1].length - 1] != ',') {
