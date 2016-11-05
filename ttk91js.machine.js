@@ -159,11 +159,15 @@ Machine.prototype = {
 	},
 
 	run: function() {
-		var loops = 0;
+		var loop = 0;
 
-		while(this.isRunning() && loops < 100) {
+		while(this.isRunning()) {
 			this.runWord();
-			loops++;
+			loop++;
+
+			if(this.settings.maxLoop && loop >= this.settings.maxLoop) {
+				break;
+			}
 		}
 	},
 
@@ -227,6 +231,8 @@ Machine.prototype = {
 				switch(addr) {
 					case SVC.HALT:
 						this.ok = false;
+						this.trigger('halt');
+
 						break;
 				}
 				break;
