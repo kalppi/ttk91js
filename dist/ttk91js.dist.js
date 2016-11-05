@@ -66,6 +66,186 @@ var _slicedToArray = function () { function sliceIterator(arr, i) { var _arr = [
 			module.exports = MicroEvent;
 		}
 	}, {}], 2: [function (require, module, exports) {
+		// shim for using process in browser
+		var process = module.exports = {};
+
+		// cached from whatever global is present so that test runners that stub it
+		// don't break things.  But we need to wrap it in a try catch in case it is
+		// wrapped in strict mode code which doesn't define any globals.  It's inside a
+		// function because try/catches deoptimize in certain engines.
+
+		var cachedSetTimeout;
+		var cachedClearTimeout;
+
+		function defaultSetTimout() {
+			throw new Error('setTimeout has not been defined');
+		}
+		function defaultClearTimeout() {
+			throw new Error('clearTimeout has not been defined');
+		}
+		(function () {
+			try {
+				if (typeof setTimeout === 'function') {
+					cachedSetTimeout = setTimeout;
+				} else {
+					cachedSetTimeout = defaultSetTimout;
+				}
+			} catch (e) {
+				cachedSetTimeout = defaultSetTimout;
+			}
+			try {
+				if (typeof clearTimeout === 'function') {
+					cachedClearTimeout = clearTimeout;
+				} else {
+					cachedClearTimeout = defaultClearTimeout;
+				}
+			} catch (e) {
+				cachedClearTimeout = defaultClearTimeout;
+			}
+		})();
+		function runTimeout(fun) {
+			if (cachedSetTimeout === setTimeout) {
+				//normal enviroments in sane situations
+				return setTimeout(fun, 0);
+			}
+			// if setTimeout wasn't available but was latter defined
+			if ((cachedSetTimeout === defaultSetTimout || !cachedSetTimeout) && setTimeout) {
+				cachedSetTimeout = setTimeout;
+				return setTimeout(fun, 0);
+			}
+			try {
+				// when when somebody has screwed with setTimeout but no I.E. maddness
+				return cachedSetTimeout(fun, 0);
+			} catch (e) {
+				try {
+					// When we are in I.E. but the script has been evaled so I.E. doesn't trust the global object when called normally
+					return cachedSetTimeout.call(null, fun, 0);
+				} catch (e) {
+					// same as above but when it's a version of I.E. that must have the global object for 'this', hopfully our context correct otherwise it will throw a global error
+					return cachedSetTimeout.call(this, fun, 0);
+				}
+			}
+		}
+		function runClearTimeout(marker) {
+			if (cachedClearTimeout === clearTimeout) {
+				//normal enviroments in sane situations
+				return clearTimeout(marker);
+			}
+			// if clearTimeout wasn't available but was latter defined
+			if ((cachedClearTimeout === defaultClearTimeout || !cachedClearTimeout) && clearTimeout) {
+				cachedClearTimeout = clearTimeout;
+				return clearTimeout(marker);
+			}
+			try {
+				// when when somebody has screwed with setTimeout but no I.E. maddness
+				return cachedClearTimeout(marker);
+			} catch (e) {
+				try {
+					// When we are in I.E. but the script has been evaled so I.E. doesn't  trust the global object when called normally
+					return cachedClearTimeout.call(null, marker);
+				} catch (e) {
+					// same as above but when it's a version of I.E. that must have the global object for 'this', hopfully our context correct otherwise it will throw a global error.
+					// Some versions of I.E. have different rules for clearTimeout vs setTimeout
+					return cachedClearTimeout.call(this, marker);
+				}
+			}
+		}
+		var queue = [];
+		var draining = false;
+		var currentQueue;
+		var queueIndex = -1;
+
+		function cleanUpNextTick() {
+			if (!draining || !currentQueue) {
+				return;
+			}
+			draining = false;
+			if (currentQueue.length) {
+				queue = currentQueue.concat(queue);
+			} else {
+				queueIndex = -1;
+			}
+			if (queue.length) {
+				drainQueue();
+			}
+		}
+
+		function drainQueue() {
+			if (draining) {
+				return;
+			}
+			var timeout = runTimeout(cleanUpNextTick);
+			draining = true;
+
+			var len = queue.length;
+			while (len) {
+				currentQueue = queue;
+				queue = [];
+				while (++queueIndex < len) {
+					if (currentQueue) {
+						currentQueue[queueIndex].run();
+					}
+				}
+				queueIndex = -1;
+				len = queue.length;
+			}
+			currentQueue = null;
+			draining = false;
+			runClearTimeout(timeout);
+		}
+
+		process.nextTick = function (fun) {
+			var args = new Array(arguments.length - 1);
+			if (arguments.length > 1) {
+				for (var i = 1; i < arguments.length; i++) {
+					args[i - 1] = arguments[i];
+				}
+			}
+			queue.push(new Item(fun, args));
+			if (queue.length === 1 && !draining) {
+				runTimeout(drainQueue);
+			}
+		};
+
+		// v8 likes predictible objects
+		function Item(fun, array) {
+			this.fun = fun;
+			this.array = array;
+		}
+		Item.prototype.run = function () {
+			this.fun.apply(null, this.array);
+		};
+		process.title = 'browser';
+		process.browser = true;
+		process.env = {};
+		process.argv = [];
+		process.version = ''; // empty string to avoid regexp issues
+		process.versions = {};
+
+		function noop() {}
+
+		process.on = noop;
+		process.addListener = noop;
+		process.once = noop;
+		process.off = noop;
+		process.removeListener = noop;
+		process.removeAllListeners = noop;
+		process.emit = noop;
+
+		process.binding = function (name) {
+			throw new Error('process.binding is not supported');
+		};
+
+		process.cwd = function () {
+			return '/';
+		};
+		process.chdir = function (dir) {
+			throw new Error('process.chdir is not supported');
+		};
+		process.umask = function () {
+			return 0;
+		};
+	}, {}], 3: [function (require, module, exports) {
 		'use strict';
 
 		var OP = {
@@ -338,11 +518,11 @@ var _slicedToArray = function () { function sliceIterator(arr, i) { var _arr = [
 		};
 
 		module.exports = compile;
-	}, {}], 3: [function (require, module, exports) {
+	}, {}], 4: [function (require, module, exports) {
 		var compile = require('./ttk91js.compile.js');
 		var Machine = require('./ttk91js.machine.js');
 
-		var module = {
+		var ttk91js = {
 			compile: compile,
 			createMachine: function createMachine(settings) {
 				return new Machine(settings);
@@ -350,293 +530,303 @@ var _slicedToArray = function () { function sliceIterator(arr, i) { var _arr = [
 		};
 
 		if (typeof window == 'undefined') {
-			module.exports = module;
+			module.exports = ttk91js;
 		} else {
-			window.ttk91js = module;
+			window.ttk91js = ttk91js;
 		}
-	}, { "./ttk91js.compile.js": 2, "./ttk91js.machine.js": 4 }], 4: [function (require, module, exports) {
-		'use strict';
+	}, { "./ttk91js.compile.js": 3, "./ttk91js.machine.js": 5 }], 5: [function (require, module, exports) {
+		(function (process) {
+			'use strict';
 
-		var MicroEvent = require('microevent');
+			var MicroEvent = require('microevent');
 
-		var OP = {
-			NOP: 0,
-			STORE: 1,
-			LOAD: 2,
-			IN: 3,
-			OUT: 4,
-			ADD: 17,
-			SUB: 18,
-			MUL: 19,
-			DIV: 20,
-			MOD: 21,
-			AND: 22,
-			OR: 23,
-			XOR: 24,
-			SHL: 25,
-			SHR: 26,
-			NOT: 27,
-			SHRA: 28,
-			COMP: 31,
-			JUMP: 32,
-			JNEG: 33,
-			JZER: 34,
-			JPOS: 35,
-			JNNEG: 36,
-			JNZER: 37,
-			JNPOS: 38,
-			JLES: 39,
-			JEQU: 40,
-			JGRE: 41,
-			JNLES: 42,
-			JNEQU: 43,
-			JNGRE: 44,
-			CALL: 49,
-			EXIT: 50,
-			PUSH: 51,
-			POP: 52,
-			PUSHR: 53,
-			POPR: 54,
-			SVC: 112
-		};
-
-		var OUTPUT = {
-			CRT: 0
-		};
-
-		var SVC = {
-			HALT: 11
-		};
-
-		var BIT_L = 4;
-		var BIT_E = 2;
-		var BIT_G = 1;
-
-		var SP = 6;
-		var FP = 7;
-
-		function splitWord(word) {
-			return [(word & 0xff << 24) >> 24, //op
-			(word & 0x7 << 21) >> 21, //rj
-			(word & 0x3 << 19) >> 19, //m
-			(word & 0x7 << 16) >> 16, //ri
-			word & 0xffff];
-		}
-
-		function Machine(settings) {
-			this.settings = settings;
-
-			this.memory = new Uint32Array(settings.memory);
-
-			this.stdout = function (out) {
-				;
+			var OP = {
+				NOP: 0,
+				STORE: 1,
+				LOAD: 2,
+				IN: 3,
+				OUT: 4,
+				ADD: 17,
+				SUB: 18,
+				MUL: 19,
+				DIV: 20,
+				MOD: 21,
+				AND: 22,
+				OR: 23,
+				XOR: 24,
+				SHL: 25,
+				SHR: 26,
+				NOT: 27,
+				SHRA: 28,
+				COMP: 31,
+				JUMP: 32,
+				JNEG: 33,
+				JZER: 34,
+				JPOS: 35,
+				JNNEG: 36,
+				JNZER: 37,
+				JNPOS: 38,
+				JLES: 39,
+				JEQU: 40,
+				JGRE: 41,
+				JNLES: 42,
+				JNEQU: 43,
+				JNGRE: 44,
+				CALL: 49,
+				EXIT: 50,
+				PUSH: 51,
+				POP: 52,
+				PUSHR: 53,
+				POPR: 54,
+				SVC: 112
 			};
 
-			this.lastPosition = 0;
+			var OUTPUT = {
+				CRT: 0
+			};
 
-			this.reset();
-		}
+			var SVC = {
+				HALT: 11
+			};
 
-		Machine.prototype = {
-			_getValue: function _getValue(m, ri, addr) {
-				var value = 0;
+			var BIT_L = 4;
+			var BIT_E = 2;
+			var BIT_G = 1;
 
-				if (ri === 0) value = addr;else value = this.reg[ri] + addr;
+			var SP = 6;
+			var FP = 7;
 
-				if (m > 0) {
-					value = this._getValue(--m, ri, this.memory[addr]);
-				}
-
-				return value;
-			},
-
-			load: function load(data) {
-				var i = 0;
-				for (; i < data.code.length; i++) {
-					this.memory[i] = data.code[i];
-				}
-
-				for (var j = 0; j < data.symbols.length; j++) {
-					this.memory[i + j] = data.data[j];
-				}
-
-				this.data = data;
-			},
-
-			getRegister: function getRegister() {
-				return {
-					0: this.reg[0],
-					1: this.reg[1],
-					2: this.reg[2],
-					3: this.reg[3],
-					4: this.reg[4],
-					5: this.reg[5],
-					SP: this.reg[SP],
-					FP: this.reg[FP],
-					PC: this.reg.PC
-				};
-			},
-
-			getMemory: function getMemory() {
-				return this.memory;
-			},
-
-			getRealLine: function getRealLine() {
-				return this.data.lineMap[this.lastPosition];
-			},
-
-
-			stop: function stop() {
-				this.ok = false;
-			},
-
-			setStdout: function setStdout(out) {
-				this.stdout = out;
-			},
-
-			reset: function reset() {
-				this.ok = true;
-				this.SR = 0;
-				this.reg = {
-					0: 0,
-					1: 0,
-					2: 0,
-					3: 0,
-					4: 0,
-					5: 0,
-					6: 0,
-					7: 0,
-					FP: 0,
-					PC: 0
-				};
-
-				this.memory.fill(0);
-			},
-
-			run: function run() {
-				var loops = 0;
-
-				while (this.isRunning() && loops < 100) {
-					this.runWord();
-					loops++;
-				}
-			},
-
-			isRunning: function isRunning() {
-				return this.ok && this.reg.PC < this.memory.length;
-			},
-
-			runWord: function runWord(count) {
-				count = count || 1;
-
-				for (var i = 0; i < count; i++) {
-					this._runWord();
-				}
-			},
-
-			_runWord: function _runWord() {
-				var _splitWord = splitWord(this.memory[this.reg.PC]),
-				    _splitWord2 = _slicedToArray(_splitWord, 5),
-				    op = _splitWord2[0],
-				    rj = _splitWord2[1],
-				    m = _splitWord2[2],
-				    ri = _splitWord2[3],
-				    addr = _splitWord2[4];
-
-				var value = this._getValue(m, ri, addr);
-
-				this.lastPosition = this.reg.PC;
-				this.reg.PC++;
-
-				switch (op) {
-					case OP.STORE:
-						var oldValue = this.memory[addr];
-
-						this.memory[addr] = this.reg[rj];
-
-						if (this.settings.triggerMemoryChange && oldValue != this.memory[addr]) {
-							this.trigger('memory-change', addr, oldValue, this.memory[addr]);
-						}
-
-						break;
-					case OP.LOAD:
-						this.reg[rj] = value;
-
-						break;
-					case OP.OUT:
-						switch (addr) {
-							case OUTPUT.CRT:
-								this.stdout(this.reg[rj]);
-
-								break;
-						}
-
-						break;
-
-					case OP.ADD:
-						this.reg[rj] += value;
-						break;
-					case OP.SUB:
-						this.reg[rj] -= value;
-						break;
-					case OP.DIV:
-						this.reg[rj] = Math.floor(this.reg[rj] / value);
-						break;
-					case OP.MUL:
-						this.reg[rj] *= value;
-						break;
-					case OP.SVC:
-						switch (addr) {
-							case SVC.HALT:
-								this.ok = false;
-								break;
-						}
-						break;
-					case OP.COMP:
-						this.SR = 0;
-
-						if (this.reg[rj] == value) this.SR |= BIT_E;
-						if (this.reg[rj] > value) this.SR |= BIT_G;
-						if (this.reg[rj] < value) this.SR |= BIT_L;
-
-						break;
-					case OP.JUMP:
-						this.reg.PC = this.memory[addr];
-
-						break;
-					case OP.JNEG:
-						break;
-					case OP.JZER:
-						break;
-					case OP.JPOS:
-						break;
-					case OP.JNNEG:
-						break;
-					case OP.JNZER:
-						break;
-					case OP.JNPOS:
-						break;
-					case OP.JLES:
-						break;
-					case OP.JEQU:
-						if (this.SR & BIT_E) this.reg.PC = this.memory[addr];
-
-						break;
-					case OP.JGRE:
-						break;
-					case OP.JNLES:
-						break;
-					case OP.JNEQU:
-						if (!(this.SR & BIT_E)) this.reg.PC = this.memory[addr];
-
-						break;
-					case OP.JNGRE:
-						break;
-				}
+			function splitWord(word) {
+				return [(word & 0xff << 24) >> 24, //op
+				(word & 0x7 << 21) >> 21, //rj
+				(word & 0x3 << 19) >> 19, //m
+				(word & 0x7 << 16) >> 16, //ri
+				word & 0xffff];
 			}
-		};
 
-		MicroEvent.mixin(Machine);
+			function Machine(settings) {
+				this.settings = settings;
 
-		module.exports = Machine;
-	}, { "microevent": 1 }] }, {}, [3]);
+				this.memory = new Uint32Array(settings.memory);
+
+				this.stdout = {
+					write: function write(out) {
+						process.stdout.write(out + '\n');
+					}
+				};
+
+				this.lastPosition = 0;
+
+				this.reset();
+			}
+
+			Machine.prototype = {
+				_getValue: function _getValue(m, ri, addr) {
+					var value = 0;
+
+					if (ri === 0) value = addr;else value = this.reg[ri] + addr;
+
+					if (m > 0) {
+						value = this._getValue(--m, ri, this.memory[addr]);
+					}
+
+					return value;
+				},
+
+				load: function load(data) {
+					var i = 0;
+					for (; i < data.code.length; i++) {
+						this.memory[i] = data.code[i];
+					}
+
+					for (var j = 0; j < data.symbols.length; j++) {
+						this.memory[i + j] = data.data[j];
+					}
+
+					this.data = data;
+				},
+
+				getRegister: function getRegister() {
+					return {
+						0: this.reg[0],
+						1: this.reg[1],
+						2: this.reg[2],
+						3: this.reg[3],
+						4: this.reg[4],
+						5: this.reg[5],
+						SP: this.reg[SP],
+						FP: this.reg[FP],
+						PC: this.reg.PC
+					};
+				},
+
+				getMemory: function getMemory() {
+					return this.memory;
+				},
+
+				getRealLine: function getRealLine() {
+					return this.data.lineMap[this.lastPosition];
+				},
+
+
+				stop: function stop() {
+					this.ok = false;
+				},
+
+				setStdout: function setStdout(out) {
+					this.stdout = out;
+				},
+
+				reset: function reset() {
+					this.ok = true;
+					this.SR = 0;
+					this.reg = {
+						0: 0,
+						1: 0,
+						2: 0,
+						3: 0,
+						4: 0,
+						5: 0,
+						6: 0,
+						7: 0,
+						FP: 0,
+						PC: 0
+					};
+
+					this.memory.fill(0);
+				},
+
+				run: function run() {
+					var loop = 0;
+
+					while (this.isRunning()) {
+						this.runWord();
+						loop++;
+
+						if (this.settings.maxLoop && loop >= this.settings.maxLoop) {
+							break;
+						}
+					}
+				},
+
+				isRunning: function isRunning() {
+					return this.ok && this.reg.PC < this.memory.length;
+				},
+
+				runWord: function runWord(count) {
+					count = count || 1;
+
+					for (var i = 0; i < count; i++) {
+						this._runWord();
+					}
+				},
+
+				_runWord: function _runWord() {
+					var _splitWord = splitWord(this.memory[this.reg.PC]),
+					    _splitWord2 = _slicedToArray(_splitWord, 5),
+					    op = _splitWord2[0],
+					    rj = _splitWord2[1],
+					    m = _splitWord2[2],
+					    ri = _splitWord2[3],
+					    addr = _splitWord2[4];
+
+					var value = this._getValue(m, ri, addr);
+
+					this.lastPosition = this.reg.PC;
+					this.reg.PC++;
+
+					switch (op) {
+						case OP.STORE:
+							var oldValue = this.memory[addr];
+
+							this.memory[addr] = this.reg[rj];
+
+							if (this.settings.triggerMemoryChange && oldValue != this.memory[addr]) {
+								this.trigger('memory-change', addr, oldValue, this.memory[addr]);
+							}
+
+							break;
+						case OP.LOAD:
+							this.reg[rj] = value;
+
+							break;
+						case OP.OUT:
+							switch (addr) {
+								case OUTPUT.CRT:
+									this.stdout.write(this.reg[rj]);
+
+									break;
+							}
+
+							break;
+
+						case OP.ADD:
+							this.reg[rj] += value;
+							break;
+						case OP.SUB:
+							this.reg[rj] -= value;
+							break;
+						case OP.DIV:
+							this.reg[rj] = Math.floor(this.reg[rj] / value);
+							break;
+						case OP.MUL:
+							this.reg[rj] *= value;
+							break;
+						case OP.SVC:
+							switch (addr) {
+								case SVC.HALT:
+									this.ok = false;
+									this.trigger('halt');
+
+									break;
+							}
+							break;
+						case OP.COMP:
+							this.SR = 0;
+
+							if (this.reg[rj] == value) this.SR |= BIT_E;
+							if (this.reg[rj] > value) this.SR |= BIT_G;
+							if (this.reg[rj] < value) this.SR |= BIT_L;
+
+							break;
+						case OP.JUMP:
+							this.reg.PC = this.memory[addr];
+
+							break;
+						case OP.JNEG:
+							break;
+						case OP.JZER:
+							break;
+						case OP.JPOS:
+							break;
+						case OP.JNNEG:
+							break;
+						case OP.JNZER:
+							break;
+						case OP.JNPOS:
+							break;
+						case OP.JLES:
+							break;
+						case OP.JEQU:
+							if (this.SR & BIT_E) this.reg.PC = this.memory[addr];
+
+							break;
+						case OP.JGRE:
+							break;
+						case OP.JNLES:
+							break;
+						case OP.JNEQU:
+							if (!(this.SR & BIT_E)) this.reg.PC = this.memory[addr];
+
+							break;
+						case OP.JNGRE:
+							break;
+					}
+				}
+			};
+
+			MicroEvent.mixin(Machine);
+
+			module.exports = Machine;
+		}).call(this, require('_process'));
+	}, { "_process": 2, "microevent": 1 }] }, {}, [4]);
