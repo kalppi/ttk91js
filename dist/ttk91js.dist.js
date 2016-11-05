@@ -342,20 +342,18 @@ var _slicedToArray = function () { function sliceIterator(arr, i) { var _arr = [
 		var compile = require('./ttk91js.compile.js');
 		var Machine = require('./ttk91js.machine.js');
 
-		(function (root) {
-			var module = {
-				compile: compile,
-				createMachine: function createMachine(settings) {
-					return new Machine(settings);
-				}
-			};
-
-			if (typeof module !== 'undefined' && 'exports' in module) {
-				module.exports = module;
-			} else {
-				root.ttk91js = module;
+		var module = {
+			compile: compile,
+			createMachine: function createMachine(settings) {
+				return new Machine(settings);
 			}
-		})(this);
+		};
+
+		if (typeof window == 'undefined') {
+			module.exports = module;
+		} else {
+			window.ttk91js = module;
+		}
 	}, { "./ttk91js.compile.js": 2, "./ttk91js.machine.js": 4 }], 4: [function (require, module, exports) {
 		'use strict';
 
