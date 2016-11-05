@@ -73,9 +73,11 @@ function Machine(settings) {
 
 	this.memory = new Uint32Array(settings.memory);
 
-	this.stdout = function(out) {
-		console.log(out);
-	};
+	this.stdout = {
+		write: function(out) {
+			process.stdout.write(out + '\n');
+		}
+	}
 
 	this.lastPosition = 0;
 
@@ -208,7 +210,7 @@ Machine.prototype = {
 			case OP.OUT:
 				switch(addr) {
 					case OUTPUT.CRT:
-						this.stdout(this.reg[rj]);
+						this.stdout.write(this.reg[rj]);
 
 						break;
 				}
