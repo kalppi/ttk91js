@@ -10,11 +10,8 @@ var gulp = require('gulp'),
 
 gulp.task('default', function() {
 	gulp.src([
-		'./ttk91js.compile.js',
-		'./ttk91js.machine.js'
+		'./ttk91js.js',
 	])
-	.pipe(jshint({esversion: 6}))
-	.pipe(jshint.reporter(stylish))
 	.pipe(through2.obj(function (file, enc, next) {
 		browserify(file.path)
 			.transform('stripify')

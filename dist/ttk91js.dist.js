@@ -1,5 +1,7 @@
 "use strict";
 
+var _slicedToArray = function () { function sliceIterator(arr, i) { var _arr = []; var _n = true; var _d = false; var _e = undefined; try { for (var _i = arr[Symbol.iterator](), _s; !(_n = (_s = _i.next()).done); _n = true) { _arr.push(_s.value); if (i && _arr.length === i) break; } } catch (err) { _d = true; _e = err; } finally { try { if (!_n && _i["return"]) _i["return"](); } finally { if (_d) throw _e; } } return _arr; } return function (arr, i) { if (Array.isArray(arr)) { return arr; } else if (Symbol.iterator in Object(arr)) { return sliceIterator(arr, i); } else { throw new TypeError("Invalid attempt to destructure non-iterable instance"); } }; }();
+
 (function e(t, n, r) {
 	function s(o, u) {
 		if (!n[o]) {
@@ -13,6 +15,57 @@
 		s(r[o]);
 	}return s;
 })({ 1: [function (require, module, exports) {
+		/**
+   * MicroEvent - to make any js object an event emitter (server or browser)
+   * 
+   * - pure javascript - server compatible, browser compatible
+   * - dont rely on the browser doms
+   * - super simple - you get it immediatly, no mistery, no magic involved
+   *
+   * - create a MicroEventDebug with goodies to debug
+   *   - make it safer to use
+  */
+
+		var MicroEvent = function MicroEvent() {};
+		MicroEvent.prototype = {
+			bind: function bind(event, fct) {
+				this._events = this._events || {};
+				this._events[event] = this._events[event] || [];
+				this._events[event].push(fct);
+			},
+			unbind: function unbind(event, fct) {
+				this._events = this._events || {};
+				if (event in this._events === false) return;
+				this._events[event].splice(this._events[event].indexOf(fct), 1);
+			},
+			trigger: function trigger(event /* , args... */) {
+				this._events = this._events || {};
+				if (event in this._events === false) return;
+				for (var i = 0; i < this._events[event].length; i++) {
+					this._events[event][i].apply(this, Array.prototype.slice.call(arguments, 1));
+				}
+			}
+		};
+
+		/**
+   * mixin will delegate all MicroEvent.js function in the destination object
+   *
+   * - require('MicroEvent').mixin(Foobar) will make Foobar able to use MicroEvent
+   *
+   * @param {Object} the object which will support MicroEvent
+  */
+		MicroEvent.mixin = function (destObject) {
+			var props = ['bind', 'unbind', 'trigger'];
+			for (var i = 0; i < props.length; i++) {
+				destObject.prototype[props[i]] = MicroEvent.prototype[props[i]];
+			}
+		};
+
+		// export in common js
+		if (typeof module !== "undefined" && 'exports' in module) {
+			module.exports = MicroEvent;
+		}
+	}, {}], 2: [function (require, module, exports) {
 		var ttk91js = function (ttk91js) {
 			'use strict';
 
@@ -291,75 +344,17 @@
 		if (typeof module !== 'undefined' && 'exports' in module) {
 			module.exports = ttk91js;
 		}
-	}, {}] }, {}, [1]);
-"use strict";
+	}, {}], 3: [function (require, module, exports) {
+		var compile = require('./ttk91js.compile.js');
+		var machine = require('./ttk91js.machine.js');
 
-var _slicedToArray = function () { function sliceIterator(arr, i) { var _arr = []; var _n = true; var _d = false; var _e = undefined; try { for (var _i = arr[Symbol.iterator](), _s; !(_n = (_s = _i.next()).done); _n = true) { _arr.push(_s.value); if (i && _arr.length === i) break; } } catch (err) { _d = true; _e = err; } finally { try { if (!_n && _i["return"]) _i["return"](); } finally { if (_d) throw _e; } } return _arr; } return function (arr, i) { if (Array.isArray(arr)) { return arr; } else if (Symbol.iterator in Object(arr)) { return sliceIterator(arr, i); } else { throw new TypeError("Invalid attempt to destructure non-iterable instance"); } }; }();
-
-(function e(t, n, r) {
-	function s(o, u) {
-		if (!n[o]) {
-			if (!t[o]) {
-				var a = typeof require == "function" && require;if (!u && a) return a(o, !0);if (i) return i(o, !0);var f = new Error("Cannot find module '" + o + "'");throw f.code = "MODULE_NOT_FOUND", f;
-			}var l = n[o] = { exports: {} };t[o][0].call(l.exports, function (e) {
-				var n = t[o][1][e];return s(n ? n : e);
-			}, l, l.exports, e, t, n, r);
-		}return n[o].exports;
-	}var i = typeof require == "function" && require;for (var o = 0; o < r.length; o++) {
-		s(r[o]);
-	}return s;
-})({ 1: [function (require, module, exports) {
-		/**
-   * MicroEvent - to make any js object an event emitter (server or browser)
-   * 
-   * - pure javascript - server compatible, browser compatible
-   * - dont rely on the browser doms
-   * - super simple - you get it immediatly, no mistery, no magic involved
-   *
-   * - create a MicroEventDebug with goodies to debug
-   *   - make it safer to use
-  */
-
-		var MicroEvent = function MicroEvent() {};
-		MicroEvent.prototype = {
-			bind: function bind(event, fct) {
-				this._events = this._events || {};
-				this._events[event] = this._events[event] || [];
-				this._events[event].push(fct);
-			},
-			unbind: function unbind(event, fct) {
-				this._events = this._events || {};
-				if (event in this._events === false) return;
-				this._events[event].splice(this._events[event].indexOf(fct), 1);
-			},
-			trigger: function trigger(event /* , args... */) {
-				this._events = this._events || {};
-				if (event in this._events === false) return;
-				for (var i = 0; i < this._events[event].length; i++) {
-					this._events[event][i].apply(this, Array.prototype.slice.call(arguments, 1));
-				}
+		module.exports = {
+			compile: compile.compile,
+			createMachine: function createMachine(settings) {
+				return new machine.Machine(settings);
 			}
 		};
-
-		/**
-   * mixin will delegate all MicroEvent.js function in the destination object
-   *
-   * - require('MicroEvent').mixin(Foobar) will make Foobar able to use MicroEvent
-   *
-   * @param {Object} the object which will support MicroEvent
-  */
-		MicroEvent.mixin = function (destObject) {
-			var props = ['bind', 'unbind', 'trigger'];
-			for (var i = 0; i < props.length; i++) {
-				destObject.prototype[props[i]] = MicroEvent.prototype[props[i]];
-			}
-		};
-
-		// export in common js
-		if (typeof module !== "undefined" && 'exports' in module) {
-			module.exports = MicroEvent;
-		}
-	}, {}], 2: [function (require, module, exports) {
+	}, { "./ttk91js.compile.js": 2, "./ttk91js.machine.js": 4 }], 4: [function (require, module, exports) {
 		var ttk91js = function (ttk91js) {
 			'use strict';
 
@@ -652,4 +647,4 @@ var _slicedToArray = function () { function sliceIterator(arr, i) { var _arr = [
 		if (typeof module !== 'undefined' && 'exports' in module) {
 			module.exports = ttk91js;
 		}
-	}, { "microevent": 1 }] }, {}, [2]);
+	}, { "microevent": 1 }] }, {}, [3]);
