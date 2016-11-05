@@ -535,7 +535,7 @@ var _slicedToArray = function () { function sliceIterator(arr, i) { var _arr = [
 			window.ttk91js = ttk91js;
 		}
 
-		//test2
+		//test6
 	}, { "./ttk91js.compile.js": 3, "./ttk91js.machine.js": 5 }], 5: [function (require, module, exports) {
 		(function (process) {
 			'use strict';
