@@ -1,43 +1,40 @@
 var chai = require('chai');
-
 var ttk91js = require('./ttk91js.js');
 
-var data = ttk91js.compile('y DC 20\nx DC 10\nLOAD R1, y\nOUT R1, =CRT\n');
-
 describe('Compile', function() {
+	var data = ttk91js.compile('y DC 20\nX DC 10\nLOAD R1, y\nOUT R1, =CRT\n');
+
 	describe('DC, LOAD, OUT', function() {
-		it('Should have right bytes', function() {
+		it('Should have the right instruction bytes', function() {
 			chai.expect(data.code).to.deep.equal([36175874, 69206016]);
 		});
 
-		it('Should have right symbols', function() {
-			chai.expect(data.symbols).to.deep.equal(['y', 'x']);
+		it('Should have symbols y and x', function() {
+			chai.expect(data.symbols).to.deep.equal(['y', 'X']);
 		});
 
-		it('Should have right data', function() {
+		it('Should have data 20, 10', function() {
 			chai.expect(data.data).to.deep.equal([20, 10]);
 		});
 	});
-
 });
 
+describe('Machine', function() {
+	var data = ttk91js.compile('y DC 20\nX DC 10\nLOAD R1, y\nOUT R1, =CRT\n');
 
+	var memoryLimit = 7;
 
-return;
+	var machine = ttk91js.createMachine(memoryLimit);
+	machine.load(data);
 
-var machine = ttk91js.createMachine(10);
-machine.load(data);
+	describe('memory', function() {
+		var memory = machine.getMemory();
 
-
-
-machine.run();
-
-var assert = require('assert');
-
-describe('Compile', function() {
-  describe('getMemory', function() {
-    it('should return -1 when the value is not present', function() {
-      assert.equal(-1, [1,2,3].indexOf(4));
-    });
-  });
+		it('Should have ' + memoryLimit + ' bytes of memory', function() {
+			chai.expect(memory.length).to.equal(memoryLimit);
+		});
+		it('Should have the right memory layout', function() {
+			chai.expect(Array.from(memory)).to.deep.equal([36175874, 69206016, 20, 10, 0, 0, 0]);
+		});
+	});
 });
