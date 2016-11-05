@@ -1,7 +1,7 @@
 var compile = require('./ttk91js.compile.js');
 var Machine = require('./ttk91js.machine.js');
 
-var module = {
+var ttk91js = {
 	compile: compile,
 	createMachine: function(settings) {
 		return new Machine(settings);
@@ -9,9 +9,9 @@ var module = {
 };
 
 if(typeof window == 'undefined') {
-	module.exports = module;
+	module.exports = ttk91js;
 } else {
-	window.ttk91js = module;
+	window.ttk91js = ttk91js;
 }
 
 

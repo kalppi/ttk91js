@@ -8,7 +8,7 @@ var gulp = require('gulp'),
 	browserify = require('browserify'),
 	through2 = require('through2');
 
-gulp.task('default', function() {
+gulp.task('build-dist', function() {
 	gulp.src([
 		'./ttk91js.js',
 	])
