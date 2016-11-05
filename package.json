@@ -4,7 +4,7 @@
   "description": "Compiler and virtual machine for TTK-91",
   "main": "ttk91js.js",
   "scripts": {
-    "test": "node test.js"
+    "test": "./node_modules/.bin/mocha --harmony-destructuring test.js"
   },
   "repository": {
     "type": "git",
@@ -18,5 +18,9 @@
   "homepage": "https://github.com/kalppi/ttk91js#readme",
   "dependencies": {
     "microevent": "^1.0.0"
+  },
+  "devDependencies": {
+    "chai": "^3.5.0",
+    "mocha": "^3.1.2"
   }
 }
