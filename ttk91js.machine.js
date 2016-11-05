@@ -68,8 +68,10 @@ function splitWord(word) {
 	]
 };
 
-function Machine(memory) {
-	this.memory = new Uint32Array(memory);
+function Machine(settings) {
+	this.settings = settings;
+
+	this.memory = new Uint32Array(settings.memory);
 
 	this.stdout = function(out) {
 		console.log(out);
@@ -169,7 +171,15 @@ Machine.prototype = {
 		return this.ok && this.reg.PC < this.memory.length
 	},
 
-	runWord: function() {
+	runWord: function(count) {
+		count = count || 1;
+
+		for(var i = 0; i < count; i++) {
+			this._runWord();
+		}
+	},
+
+	_runWord: function() {
 		var [op, rj, m, ri, addr] = splitWord(this.memory[this.reg.PC]);
 		var value = this._getValue(m, ri, addr);
 
@@ -182,7 +192,7 @@ Machine.prototype = {
 
 				this.memory[addr] = this.reg[rj];
 
-				if(oldValue != this.memory[addr]) {
+				if(this.settings.triggerMemoryChange && oldValue != this.memory[addr]) {
 					this.trigger('memory-change', addr, oldValue, this.memory[addr]);
 				}
 
@@ -263,6 +273,8 @@ Machine.prototype = {
 		}
 	}
 };
+
+MicroEvent.mixin(Machine);
 
 
 module.exports = Machine;

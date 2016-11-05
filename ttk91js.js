@@ -4,7 +4,7 @@ var Machine = require('./ttk91js.machine.js');
 
 module.exports = {
 	compile: compile,
-	createMachine: function(memory) {
-		return new Machine(memory);
+	createMachine: function(settings) {
+		return new Machine(settings);
 	}
 };

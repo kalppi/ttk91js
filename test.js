@@ -5,36 +5,47 @@ describe('Compile', function() {
 	var data = ttk91js.compile('y DC 20\nX DC 10\nLOAD R1, y\nOUT R1, =CRT\n');
 
 	describe('DC, LOAD, OUT', function() {
-		it('Should have the right instruction bytes', function() {
+		it('Instruction bytes', function() {
 			chai.expect(data.code).to.deep.equal([36175874, 69206016]);
 		});
 
-		it('Should have symbols y and x', function() {
+		it('Symbols', function() {
 			chai.expect(data.symbols).to.deep.equal(['y', 'X']);
 		});
 
-		it('Should have data 20, 10', function() {
+		it('Data', function() {
 			chai.expect(data.data).to.deep.equal([20, 10]);
 		});
 	});
 });
 
 describe('Machine', function() {
-	var data = ttk91js.compile('y DC 20\nX DC 10\nLOAD R1, y\nOUT R1, =CRT\n');
-
-	var memoryLimit = 7;
-
-	var machine = ttk91js.createMachine(memoryLimit);
-	machine.load(data);
+	var memoryLimit = 7;	
 
 	describe('memory', function() {
-		var memory = machine.getMemory();
+		var machine1 = ttk91js.createMachine({memory: memoryLimit});
+		var data1 = ttk91js.compile('y DC 20\nX DC 10\nLOAD R1, y\nOUT R1, =CRT\n');
+		machine1.load(data1);
 
-		it('Should have ' + memoryLimit + ' bytes of memory', function() {
+		var memory = machine1.getMemory();
+
+		it('Amount of memory', function() {
 			chai.expect(memory.length).to.equal(memoryLimit);
 		});
-		it('Should have the right memory layout', function() {
+		it('Memory layout', function() {
 			chai.expect(Array.from(memory)).to.deep.equal([36175874, 69206016, 20, 10, 0, 0, 0]);
+		});
+
+		var machine2 = ttk91js.createMachine({memory: memoryLimit});
+		var data2 = ttk91js.compile('x DC 10\nLOAD R1, =50\nLOAD R2, =60\nSTORE R1, x\nSTORE R2, x');
+		machine2.load(data2);
+
+		it('Memory layout after steps', function() {
+			machine2.runWord(4);
+
+			var memory = machine2.getMemory();
+
+			chai.expect(memory[4]).to.equal(60);
 		});
 	});
 });
