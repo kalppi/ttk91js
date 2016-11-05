@@ -1,0 +1,22 @@
+{
+  "name": "ttk91js",
+  "version": "1.0.0",
+  "description": "Compiler and virtual machine for TTK-91",
+  "main": "ttk91js.js",
+  "scripts": {
+    "test": "node test.js"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+ssh://git@github.com/kalppi/ttk91js.git"
+  },
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/kalppi/ttk91js/issues"
+  },
+  "homepage": "https://github.com/kalppi/ttk91js#readme",
+  "dependencies": {
+    "microevent": "^1.0.0"
+  }
+}
