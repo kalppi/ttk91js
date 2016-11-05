@@ -4,7 +4,9 @@ var gulp = require('gulp'),
 	jshint = require('gulp-jshint'),
 	stylish = require('jshint-stylish'),
 	uglify = require('gulp-uglify'),
-	babel = require('gulp-babel');
+	babel = require('gulp-babel'),
+	browserify = require('browserify'),
+	through2 = require('through2');
 
 gulp.task('default', function() {
 	gulp.src([
@@ -13,6 +15,15 @@ gulp.task('default', function() {
 	])
 	.pipe(jshint({esversion: 6}))
 	.pipe(jshint.reporter(stylish))
+	.pipe(through2.obj(function (file, enc, next) {
+		browserify(file.path)
+			.transform('stripify')
+			.bundle(function(err, res){
+				file.contents = res;
+
+				next(null, file);
+			});
+	}))
 	.pipe(babel({
 		presets: ['es2015']
 	}))
