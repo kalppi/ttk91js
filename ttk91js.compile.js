@@ -60,15 +60,26 @@ function prepare(code) {
 		var parts = line.split(/[\s]+/);
 
 		if(OPS.indexOf(parts[0]) == -1) {
-			symbols.push(parts[0]);
-			data.push(instructions.length);
-
+			symbols.push({
+				name: parts[0],
+				addr: instructions.length,
+				type: 'absolute'
+			});
+			
 			parts.shift();
 		}
 
 		if(parts[0] == 'DC') {
-			data.pop();
-			data.push(parseInt(parts[1]));
+			let value = parseInt(parts[1]);
+			let name = symbols.pop().name;
+			
+			symbols.push({
+				name: name,
+				addr: data.length,
+				type: 'relative'
+			});
+
+			data.push(value);
 		} else {
 			if(parts.length == 3) {
 				if(parts[1][parts[1].length - 1] != ',') {
@@ -109,7 +120,7 @@ function prepare(code) {
 				}
 			}
 
-			if(OPS.indexOf(parts[0]) == -1) {
+			if(parts[0] != 'DC' && OPS.indexOf(parts[0]) == -1) {
 				throw new Ttk91jsCompileException('unknown opcode (' + parts[0] +')', l);
 			}
 
@@ -138,14 +149,14 @@ function prepare(code) {
 var compile = function(code) {
 	var data = prepare(code);
 
-	function getAddr(addr) {
-		for(var i = 0; i < data.symbols.length; i++) {
-			if(data.symbols[i] == addr) {
-				return data.code.length + i;
+	function getSymbolAddr(symbol) {
+		for(let i = 0; i < data.symbols.length; i++) {
+			if(data.symbols[i].name == symbol) {
+				return data.symbols[i].addr;
 			}
 		}
 
-		throw new Ttk91jsCompileException('unknown symbol (' + addr + ')');
+		throw new Ttk91jsCompileException('unknown symbol (' + symbol + ')');
 	}
 
 	function isRegister(reg) {
@@ -159,20 +170,28 @@ var compile = function(code) {
 
 	var words = [];
 
+	for(let i = 0; i < data.symbols.length; i++) {
+		if(data.symbols[i].type == 'relative') {
+			data.symbols[i].addr += data.code.length;
+		}
+
+		delete data.symbols[i].type;
+	}
+
 	for(var d of data.code) {
 		var op = global.OP[d[0]];
 
 		var rj = 0;
 		var ri = 0;
 
-		var m = 0;
+		var m = MODE.DIRECT;
 		var addr = 0;
 
 		if(d.length > 1) {
 			if(isRegister(d[1])) {
 				rj = getRegister(d[1]);
 			} else {
-				rj = getAddr(d[1]);
+				rj = getSymbolAddr(d[1]);
 			}
 		}
 
@@ -198,10 +217,8 @@ var compile = function(code) {
 				m = MODE.INDIRECT;
 				addr = parseInt(d[2].substring(1));
 			} else {
-				m = MODE.DIRECT;
-
 				if(/^[a-z]+$/i.test(d[2])) {
-					addr = getAddr(d[2]);
+					addr = getSymbolAddr(d[2]);
 				} else {
 					addr = parseInt(d[2]);
 				}
@@ -222,17 +239,6 @@ var compile = function(code) {
 	}
 	
 	return {lines: data.code, code: words, symbols: data.symbols, data: data.data, lineMap: data.lineMap};
-};
-
-
-var ttk91Debug = {
-	word: function(word) {
-		var s = ('0'.repeat(32) + (word >>> 0).toString(2)).slice(-32);
-		console.log(s.substr(0, 8) + ' ' + s.substr(8, 3) + ' ' + s.substr(11, 2) + ' ' + s.substr(13, 3) + ' ' + s.substr(16));
-	},
-	bin: function(dec) {
-		console.log(('0'.repeat(32) + (dec >>> 0).toString(2)).slice(-32));
-	}
 };
 
 module.exports = compile;

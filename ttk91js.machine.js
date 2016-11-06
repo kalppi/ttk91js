@@ -81,7 +81,7 @@ Machine.prototype = {
 			this.memory[i] = data.code[i];
 		}
 
-		for(var j = 0; j < data.symbols.length; j++) {
+		for(var j = 0; j < data.data.length; j++) {
 			this.memory[i + j] = data.data[j];
 		}
 
@@ -207,7 +207,7 @@ Machine.prototype = {
 
 				break;
 			case OP.JUMP:
-				this.reg[PC] = this.memory[addr];
+				this.reg[PC] = addr;
 
 				break;
 			case OP.JNEG:

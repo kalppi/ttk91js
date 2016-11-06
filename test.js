@@ -27,11 +27,12 @@ describe('Compile', function() {
 		let data = ttk91js.compile('y DC 20\nX DC 10\nLOAD R1, y\nNOP\nOUT R1, =CRT\n');
 
 		it('Instruction bytes', function() {
-			chai.expect(data.code).to.deep.equal([36175875, 0, 69206016]);
+			chai.expect(data.code).to.deep.equal([36175875, 524288, 69206016]);
 		});
 
 		it('Symbols', function() {
-			chai.expect(data.symbols).to.deep.equal(['y', 'X']);
+			chai.expect(data.symbols[0].name).to.equal('y');
+			chai.expect(data.symbols[1].name).to.equal('X');
 		});
 
 		it('Data', function() {

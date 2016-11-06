@@ -42,12 +42,24 @@ function wordToString(word) {
 	}
 }
 
+var debug = {
+	word: function(word) {
+		var s = ('0'.repeat(32) + (word >>> 0).toString(2)).slice(-32);
+		console.log(s.substr(0, 8) + ' ' + s.substr(8, 3) + ' ' + s.substr(11, 2) + ' ' + s.substr(13, 3) + ' ' + s.substr(16));
+	},
+	bin: function(dec) {
+		console.log(('0'.repeat(32) + (dec >>> 0).toString(2)).slice(-32));
+	}
+};
+
+
 var ttk91js = {
 	wordToString: wordToString,
 	compile: compile,
 	createMachine: function(settings) {
 		return new Machine(settings);
-	}
+	},
+	debug: debug
 };
 
 if(typeof window == 'undefined') {
