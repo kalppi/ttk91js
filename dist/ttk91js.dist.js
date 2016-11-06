@@ -858,5 +858,7 @@ var _slicedToArray = function () { function sliceIterator(arr, i) { var _arr = [
 			MicroEvent.mixin(Machine);
 
 			module.exports = Machine;
+
+			//test
 		}).call(this, require('_process'));
 	}, { "_process": 2, "microevent": 1 }] }, {}, [4]);
