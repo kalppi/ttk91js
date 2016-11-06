@@ -13,6 +13,3 @@ if(typeof window == 'undefined') {
 } else {
 	window.ttk91js = ttk91js;
 }
-
-
-//test18
