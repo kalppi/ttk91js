@@ -293,5 +293,3 @@ Machine.prototype = {
 MicroEvent.mixin(Machine);
 
 module.exports = Machine;
-
-//test
