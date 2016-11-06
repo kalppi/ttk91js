@@ -31,7 +31,11 @@ function wordToString(word) {
 			break;
 	}
 
-	return util.format('%s R%d, %s%s(R%s)', OPSV[op], rj, ms, addr, ri);
+	if(op >= global.OP.JUMP && op <= global.OP.JNGRE) {
+		return util.format('%s %d', OPSV[op], addr);
+	} else {
+		return util.format('%s R%d, %s%s(R%s)', OPSV[op], rj, ms, addr, ri);
+	}
 }
 
 var ttk91js = {
