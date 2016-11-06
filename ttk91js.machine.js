@@ -57,6 +57,7 @@ const BIT_G = 1;
 
 const SP = 6;
 const FP = 7;
+const PC = 8;
 
 function splitWord(word) {
 	return [
@@ -72,12 +73,13 @@ function Machine(settings) {
 	this.settings = settings;
 
 	this.memory = new Uint32Array(settings.memory);
+	this.reg = new Uint32Array(9);
 
 	this.stdout = {
 		write: function(out) {
 			process.stdout.write(out + '\n');
 		}
-	}
+	};
 
 	this.lastPosition = 0;
 
@@ -111,18 +113,8 @@ Machine.prototype = {
 		this.data = data;
 	},
 
-	getRegister: function() {
-		return {
-			0: this.reg[0],
-			1: this.reg[1],
-			2: this.reg[2],
-			3: this.reg[3],
-			4: this.reg[4],
-			5: this.reg[5],
-			SP: this.reg[SP],
-			FP: this.reg[FP],
-			PC: this.reg.PC
-		};
+	getRegisters: function() {
+		return this.reg;
 	},
 
 	getMemory: function() {
@@ -144,19 +136,7 @@ Machine.prototype = {
 	reset: function() {
 		this.ok = true;
 		this.SR = 0;
-		this.reg = {
-			0: 0,
-			1: 0,
-			2: 0,
-			3: 0,
-			4: 0,
-			5: 0,
-			6: 0,
-			7: 0,
-			FP: 0,
-			PC: 0
-		};
-
+		this.reg.fill(0);
 		this.memory.fill(0);
 	},
 
@@ -174,7 +154,7 @@ Machine.prototype = {
 	},
 
 	isRunning: function() {
-		return this.ok && this.reg.PC < this.memory.length;
+		return this.ok && this.reg[PC] < this.memory.length;
 	},
 
 	runWord: function(count) {
@@ -186,11 +166,11 @@ Machine.prototype = {
 	},
 
 	_runWord: function() {
-		var [op, rj, m, ri, addr] = splitWord(this.memory[this.reg.PC]);
+		var [op, rj, m, ri, addr] = splitWord(this.memory[this.reg[PC]]);
 		var value = this._getValue(m, ri, addr);
 
-		this.lastPosition = this.reg.PC;
-		this.reg.PC++;
+		this.lastPosition = this.reg[PC];
+		this.reg[PC]++;
 
 		switch(op) {
 			case OP.STORE:
@@ -247,7 +227,7 @@ Machine.prototype = {
 
 				break;
 			case OP.JUMP:
-				this.reg.PC = this.memory[addr];
+				this.reg[PC] = this.memory[addr];
 
 				break;
 			case OP.JNEG:
@@ -265,7 +245,7 @@ Machine.prototype = {
 			case OP.JLES:
 				break;
 			case OP.JEQU:
-				if(this.SR & BIT_E) this.reg.PC = this.memory[addr];
+				if(this.SR & BIT_E) this.reg[PC] = this.memory[addr];
 			
 				break;
 			case OP.JGRE:
@@ -273,7 +253,7 @@ Machine.prototype = {
 			case OP.JNLES:
 				break;
 			case OP.JNEQU:
-				if(!(this.SR & BIT_E)) this.reg.PC = this.memory[addr];
+				if(!(this.SR & BIT_E)) this.reg[PC] = this.memory[addr];
 
 				break;
 			case OP.JNGRE:
