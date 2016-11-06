@@ -94,17 +94,17 @@ describe('Machine', function() {
 	});
 
 	describe('triggers', function() {
-		it('memory-change', (done) => {
+		it('memory-write', (done) => {
 			let machine = ttk91js.createMachine({
 				memory: memoryLimit,
-				triggerMemoryChange: true
+				triggerMemoryWrite: true
 			});
 
 			let data = ttk91js.compile('x DC 1\nLOAD R1, =2\nSTORE R1, x\nSVC SP, =CRT');
 
 			machine.load(data);
 
-			machine.bind('memory-change', (addr, oldValue, newValue) => {
+			machine.bind('memory-write', (addr, oldValue, newValue) => {
 				chai.expect(oldValue).to.equal(1);
 				chai.expect(newValue).to.equal(2);
 				chai.expect(addr).to.equal(3);
@@ -115,17 +115,17 @@ describe('Machine', function() {
 			machine.run();
 		});
 
-		it('register-change', (done) => {
+		it('register-write', (done) => {
 			let machine = ttk91js.createMachine({
 				memory: memoryLimit,
-				triggerRegisterChange: true
+				triggerRegisterWrite: true
 			});
 
 			let data = ttk91js.compile('LOAD R3, =2');
 
 			machine.load(data);
 
-			machine.bind('register-change', (addr, oldValue, newValue) => {
+			machine.bind('register-write', (addr, oldValue, newValue) => {
 				chai.expect(oldValue).to.be.equal(0);
 				chai.expect(newValue).to.be.equal(2);
 				chai.expect(addr).to.be.equal(3);
@@ -136,4 +136,26 @@ describe('Machine', function() {
 			machine.run();
 		});
 	});
+
+	describe('stdout', () => {
+		let machine = ttk91js.createMachine({
+			memory: memoryLimit,
+		});
+
+		let data = ttk91js.compile('LOAD R1, =123\nOUT R1, =CRT');
+
+		machine.load(data);
+
+		it('redirect', (done) => {
+			machine.setStdout({
+				write: function(out) {
+					chai.expect(out).to.be.equal(123);
+
+					done();
+				}
+			});
+
+			machine.run();
+		})
+	})
 });
