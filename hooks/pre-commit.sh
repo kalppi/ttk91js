@@ -1,6 +1,6 @@
 git stash -q --keep-index
 
-RESULT=0
+RESULT="0"
 
 if git diff --name-only | grep 'ttk91js.*js'; then
 	npm test
