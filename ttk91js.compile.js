@@ -115,7 +115,7 @@ function prepare(code) {
 		} else {
 			if(parts.length == 3) {
 				if(parts[1][parts[1].length - 1] != ',') {
-					throw new Ttk91jsCompileException('syntax error', l);
+					throw new Ttk91jsCompileException('syntax error', l + 1);
 				} else {
 					parts[1] = parts[1].substring(0, parts[1].length - 1);
 				}
@@ -126,7 +126,7 @@ function prepare(code) {
 				if(i != -1) {
 					var j = parts[2].indexOf(')', i);
 					if(j == -1) {
-						throw new Ttk91jsCompileException('syntax error', l);
+						throw new Ttk91jsCompileException('syntax error', l + 1);
 					} else {
 						parts.push(parts[2].substring(i+1,j));
 						parts[2] = parts[2].substring(0, i);
@@ -153,13 +153,13 @@ function prepare(code) {
 			}
 
 			if(OPS.indexOf(parts[0]) == -1) {
-				throw new Ttk91jsCompileException('unknown opcode (' + parts[0] +')', l);
+				throw new Ttk91jsCompileException('unknown opcode (' + parts[0] +')', l + 1);
 			}
 
 			parts.forEach((part) => {
 				if(part.length == 2 && part[0] == 'R') {
 					if(/0-9/.test(part[1]) || parseInt(part[1]) > 7) {
-						throw new Ttk91jsCompileException('invalid register (' + part + ')', l);
+						throw new Ttk91jsCompileException('invalid register (' + part + ')', l + 1);
 					}
 				}
 			});
