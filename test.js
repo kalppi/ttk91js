@@ -100,4 +100,3 @@ describe('Machine', function() {
 		
 	});
 });
-//test
