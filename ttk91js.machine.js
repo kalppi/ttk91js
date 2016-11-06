@@ -140,14 +140,16 @@ Machine.prototype = {
 		this.memory.fill(0);
 	},
 
-	run: function() {
+	run: function(max) {
+		max = max || -1;
+
 		var loop = 0;
 
 		while(this.isRunning()) {
 			this.runWord();
 			loop++;
 
-			if(this.settings.maxLoop && loop >= this.settings.maxLoop) {
+			if((max > 0) && loop >= max) {
 				break;
 			}
 		}
