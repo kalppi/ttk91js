@@ -24,7 +24,7 @@ describe('Compile', function() {
 });
 
 describe('Machine', function() {
-	let memoryLimit = 7;	
+	let memoryLimit = 7;
 
 	describe('memory', function() {
 		let machine1 = ttk91js.createMachine({memory: memoryLimit});
@@ -100,3 +100,5 @@ describe('Machine', function() {
 		
 	});
 });
+
+//test
