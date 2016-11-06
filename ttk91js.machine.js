@@ -59,6 +59,26 @@ const SP = 6;
 const FP = 7;
 const PC = 8;
 
+function Ttk91jsRuntimeException(message, line) {
+	this.name = 'Ttk91jsRuntimeException';
+	this.message = message;
+	this.line = line;
+}
+
+Ttk91jsRuntimeException.prototype.toString = function() {
+	return this.name + ': ' + this.message;
+};
+
+function Ttk91jsApiException(message, line) {
+	this.name = 'Ttk91jsApiException';
+	this.message = message;
+	this.line = line;
+}
+
+Ttk91jsRuntimeException.prototype.toString = function() {
+	return this.name + ': ' + this.message;
+};
+
 function splitWord(word) {
 	return [
 		(word & (0xff << 24)) >> 24,	//op
@@ -82,6 +102,7 @@ function Machine(settings) {
 	};
 
 	this.lastPosition = 0;
+	this.data = null;
 
 	this.reset();
 }
@@ -121,10 +142,6 @@ Machine.prototype = {
 		return this.memory;
 	},
 
-	getRealLine() {
-		return this.data.lineMap[this.lastPosition];
-	},
-
 	stop: function() {
 		this.ok = false;
 	},
@@ -138,6 +155,7 @@ Machine.prototype = {
 		this.SR = 0;
 		this.reg.fill(0);
 		this.memory.fill(0);
+		this.data = null;
 	},
 
 	run: function(max) {
