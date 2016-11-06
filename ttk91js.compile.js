@@ -1,47 +1,8 @@
 'use strict';
 
-const OP = {
-	NOP: 0,
-	STORE: 1,
-	LOAD: 2,
-	IN: 3,
-	OUT: 4,
-	ADD: 17,
-	SUB: 18,
-	MUL: 19,
-	DIV: 20,
-	MOD: 21,
-	AND: 22,
-	OR: 23,
-	XOR: 24,
-	SHL: 25,
-	SHR: 26,
-	NOT: 27,
-	SHRA: 28,
-	COMP: 31,
-	JUMP: 32,
-	JNEG: 33,
-	JZER: 34,
-	JPOS: 35,
-	JNNEG: 36,
-	JNZER: 37,
-	JNPOS: 38,
-	JLES: 39,
-	JEQU: 40,
-	JGRE: 41,
-	JNLES: 42,
-	JNEQU: 43,
-	JNGRE: 44,
-	CALL: 49,
-	EXIT: 50,
-	PUSH: 51,
-	POP: 52,
-	PUSHR: 53,
-	POPR: 54,
-	SVC: 112
-};
+var global = require('./ttk91js.global.js');
 
-var OPS = Object.keys(OP);
+var OPS = Object.keys(global.OP);
 
 const OUTPUT = {
 	CRT: 0
@@ -51,11 +12,7 @@ const SVC = {
 	HALT: 11
 };
 
-const MODE = {
-	IMMEDIATE: 0,
-	DIRECT: 1,
-	INDIRECT: 2
-};
+const MODE = global.MODE;
 
 const SP = 6;
 const FP = 7;
@@ -203,20 +160,21 @@ var compile = function(code) {
 	var words = [];
 
 	for(var d of data.code) {
-		if(isRegister(d[1])) {
-			d[1] = getRegister(d[1]);
-		} else {
-			d[1] = getAddr(d[1]);
-		}
+		var op = global.OP[d[0]];
 
-
-		var op = OP[d[0]];
-
-		var rj = d[1];
+		var rj = 0;
 		var ri = 0;
 
-		var m = MODE.DIRECT;
+		var m = 0;
 		var addr = 0;
+
+		if(d.length > 1) {
+			if(isRegister(d[1])) {
+				rj = getRegister(d[1]);
+			} else {
+				rj = getAddr(d[1]);
+			}
+		}
 
 		if(d.length > 2) {
 			if(d[2][0] == '=') {
@@ -240,6 +198,8 @@ var compile = function(code) {
 				m = MODE.INDIRECT;
 				addr = parseInt(d[2].substring(1));
 			} else {
+				m = MODE.DIRECT;
+
 				if(/^[a-z]+$/i.test(d[2])) {
 					addr = getAddr(d[2]);
 				} else {
@@ -250,16 +210,17 @@ var compile = function(code) {
 			ri = getRegister(d[3]);
 		}
 
-		if(op >= OP.JUMP && op <= OP.JNGRE) {
+		if(op >= global.OP.JUMP && op <= global.OP.JNGRE) {
 			addr = rj;
 			rj = 0;
 			m = 0;
 		}
 
 		var word = makeWord(op, rj, m, ri, addr);
+
 		words.push(word);
 	}
-
+	
 	return {lines: data.code, code: words, symbols: data.symbols, data: data.data, lineMap: data.lineMap};
 };
 

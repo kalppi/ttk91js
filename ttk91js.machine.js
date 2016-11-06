@@ -1,47 +1,7 @@
 'use strict';
 
 var MicroEvent = require('microevent');
-
-const OP = {
-	NOP: 0,
-	STORE: 1,
-	LOAD: 2,
-	IN: 3,
-	OUT: 4,
-	ADD: 17,
-	SUB: 18,
-	MUL: 19,
-	DIV: 20,
-	MOD: 21,
-	AND: 22,
-	OR: 23,
-	XOR: 24,
-	SHL: 25,
-	SHR: 26,
-	NOT: 27,
-	SHRA: 28,
-	COMP: 31,
-	JUMP: 32,
-	JNEG: 33,
-	JZER: 34,
-	JPOS: 35,
-	JNNEG: 36,
-	JNZER: 37,
-	JNPOS: 38,
-	JLES: 39,
-	JEQU: 40,
-	JGRE: 41,
-	JNLES: 42,
-	JNEQU: 43,
-	JNGRE: 44,
-	CALL: 49,
-	EXIT: 50,
-	PUSH: 51,
-	POP: 52,
-	PUSHR: 53,
-	POPR: 54,
-	SVC: 112
-};
+var global = require('./ttk91js.global.js');
 
 const OUTPUT = {
 	CRT: 0
@@ -58,6 +18,8 @@ const BIT_G = 1;
 const SP = 6;
 const FP = 7;
 const PC = 8;
+
+const OP = global.OP;
 
 function Ttk91jsRuntimeException(message, line) {
 	this.name = 'Ttk91jsRuntimeException';
@@ -79,15 +41,7 @@ Ttk91jsRuntimeException.prototype.toString = function() {
 	return this.name + ': ' + this.message;
 };
 
-function splitWord(word) {
-	return [
-		(word & (0xff << 24)) >> 24,	//op
-		(word & (0x7 << 21)) >> 21,		//rj
-		(word & (0x3 << 19)) >> 19,		//m
-		(word & (0x7 << 16)) >> 16,		//ri
-		(word & 0xffff)					//addr
-	];
-}
+
 
 function Machine(settings) {
 	this.settings = settings;
@@ -186,7 +140,7 @@ Machine.prototype = {
 	},
 
 	_runWord: function() {
-		var [op, rj, m, ri, addr] = splitWord(this.memory[this.reg[PC]]);
+		var [op, rj, m, ri, addr] = global.splitWord(this.memory[this.reg[PC]]);
 		var value = this._getValue(m, ri, addr);
 
 		var oldPC = this.reg[PC];
@@ -195,6 +149,8 @@ Machine.prototype = {
 		this.reg[PC]++;
 
 		switch(op) {
+			case OP.NOP:
+				break;
 			case OP.STORE:
 				if(this.settings.triggerMemoryWrite) {
 					this.trigger('memory-write', addr, this.memory[addr], this.reg[rj]);
@@ -282,6 +238,8 @@ Machine.prototype = {
 				break;
 			case OP.JNGRE:
 				break;
+			default:
+				throw new Ttk91jsRuntimeException('unknown opcode (' + op + ')');
 		}
 
 		if(this.settings.triggerRegisterWrite) {
