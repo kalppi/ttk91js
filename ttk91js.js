@@ -34,7 +34,11 @@ function wordToString(word) {
 	if(op >= global.OP.JUMP && op <= global.OP.JNGRE) {
 		return util.format('%s %d', OPSV[op], addr);
 	} else {
-		return util.format('%s R%d, %s%s(R%s)', OPSV[op], rj, ms, addr, ri);
+		let rjs = 'R' + rj;
+		if(rj == 6) rjs = 'SP';
+		else if(rj == 7) rjs = 'FP';
+
+		return util.format('%s %s, %s%s(R%s)', OPSV[op], rjs, ms, addr, ri);
 	}
 }
 
