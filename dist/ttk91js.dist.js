@@ -850,7 +850,7 @@ var _slicedToArray = function () { function sliceIterator(arr, i) { var _arr = [
 					}
 
 					if (this.settings.triggerRegisterWrite) {
-						this.trigger('register-change', PC, oldPC, this.reg[PC]);
+						this.trigger('register-write', PC, oldPC, this.reg[PC]);
 					}
 				}
 			};
