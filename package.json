@@ -4,7 +4,7 @@
   "description": "Compiler and virtual machine for TTK-91",
   "main": "ttk91js.js",
   "scripts": {
-    "test": "./node_modules/.bin/mocha --harmony-destructuring test.js"
+    "test": "./node_modules/.bin/mocha --harmony-destructuring --harmony test.js"
   },
   "repository": {
     "type": "git",
@@ -35,9 +35,5 @@
     "shared-git-hooks": "^1.2.1",
     "stripify": "^6.0.0",
     "through2": "^2.0.1"
-  },
-  "jshintConfig": {
-  	"esversion": "6",
-  	"node": "true"
   }
 }
