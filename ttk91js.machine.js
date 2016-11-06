@@ -141,7 +141,7 @@ Machine.prototype = {
 	},
 
 	run: function(max) {
-		max = max || -1; 
+		max = max || -1;
 
 		var loop = 0;
 
