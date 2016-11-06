@@ -1155,10 +1155,6 @@ var _typeof = typeof Symbol === "function" && typeof Symbol.iterator === "symbol
     }
 
     function wordToString(word) {
-      if (word === 0) {
-        return 'NOP';
-      }
-
       var _global$splitWord = global.splitWord(word),
           _global$splitWord2 = _slicedToArray(_global$splitWord, 5),
           op = _global$splitWord2[0],
@@ -1166,6 +1162,10 @@ var _typeof = typeof Symbol === "function" && typeof Symbol.iterator === "symbol
           m = _global$splitWord2[2],
           ri = _global$splitWord2[3],
           addr = _global$splitWord2[4];
+
+      if (op === 0) {
+        return 'NOP';
+      }
 
       var ms = '';
       switch (m) {
