@@ -172,9 +172,11 @@ Machine.prototype = {
 		this.lastPosition = this.reg[PC];
 		this.reg[PC]++;
 
+		let oldValue;
+
 		switch(op) {
 			case OP.STORE:
-				var oldValue = this.memory[addr];
+				oldValue = this.memory[addr];
 
 				this.memory[addr] = this.reg[rj];
 
@@ -184,7 +186,13 @@ Machine.prototype = {
 
 				break;
 			case OP.LOAD:
+				oldValue = this.reg[rj];
+
 				this.reg[rj] = value;
+
+				if(this.settings.triggerRegisterChange && oldValue != this.reg[rj]) {
+					this.trigger('register-change', rj, oldValue, this.reg[rj]);
+				}
 
 				break;
 			case OP.OUT:
