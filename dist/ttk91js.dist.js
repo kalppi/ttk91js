@@ -754,30 +754,26 @@ var _slicedToArray = function () { function sliceIterator(arr, i) { var _arr = [
 
 					var value = this._getValue(m, ri, addr);
 
+					var oldPC = this.reg[PC];
+
 					this.lastPosition = this.reg[PC];
 					this.reg[PC]++;
 
-					var oldValue = void 0;
-
 					switch (op) {
 						case OP.STORE:
-							oldValue = this.memory[addr];
+							if (this.settings.triggerMemoryWrite) {
+								this.trigger('memory-write', addr, this.memory[addr], this.reg[rj]);
+							}
 
 							this.memory[addr] = this.reg[rj];
 
-							if (this.settings.triggerMemoryChange && oldValue != this.memory[addr]) {
-								this.trigger('memory-change', addr, oldValue, this.memory[addr]);
-							}
-
 							break;
 						case OP.LOAD:
-							oldValue = this.reg[rj];
+							if (this.settings.triggerRegisterWrite) {
+								this.trigger('register-write', rj, this.reg[rj], value);
+							}
 
 							this.reg[rj] = value;
-
-							if (this.settings.triggerRegisterChange && oldValue != this.reg[rj]) {
-								this.trigger('register-change', rj, oldValue, this.reg[rj]);
-							}
 
 							break;
 						case OP.OUT:
@@ -851,6 +847,10 @@ var _slicedToArray = function () { function sliceIterator(arr, i) { var _arr = [
 							break;
 						case OP.JNGRE:
 							break;
+					}
+
+					if (this.settings.triggerRegisterWrite) {
+						this.trigger('register-change', PC, oldPC, this.reg[PC]);
 					}
 				}
 			};
