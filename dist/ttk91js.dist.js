@@ -595,6 +595,7 @@ var _slicedToArray = function () { function sliceIterator(arr, i) { var _arr = [
 
 			var SP = 6;
 			var FP = 7;
+			var PC = 8;
 
 			function splitWord(word) {
 				return [(word & 0xff << 24) >> 24, //op
@@ -608,6 +609,7 @@ var _slicedToArray = function () { function sliceIterator(arr, i) { var _arr = [
 				this.settings = settings;
 
 				this.memory = new Uint32Array(settings.memory);
+				this.reg = new Uint32Array(9);
 
 				this.stdout = {
 					write: function write(out) {
@@ -646,18 +648,8 @@ var _slicedToArray = function () { function sliceIterator(arr, i) { var _arr = [
 					this.data = data;
 				},
 
-				getRegister: function getRegister() {
-					return {
-						0: this.reg[0],
-						1: this.reg[1],
-						2: this.reg[2],
-						3: this.reg[3],
-						4: this.reg[4],
-						5: this.reg[5],
-						SP: this.reg[SP],
-						FP: this.reg[FP],
-						PC: this.reg.PC
-					};
+				getRegisters: function getRegisters() {
+					return this.reg;
 				},
 
 				getMemory: function getMemory() {
@@ -680,19 +672,7 @@ var _slicedToArray = function () { function sliceIterator(arr, i) { var _arr = [
 				reset: function reset() {
 					this.ok = true;
 					this.SR = 0;
-					this.reg = {
-						0: 0,
-						1: 0,
-						2: 0,
-						3: 0,
-						4: 0,
-						5: 0,
-						6: 0,
-						7: 0,
-						FP: 0,
-						PC: 0
-					};
-
+					this.reg.fill(0);
 					this.memory.fill(0);
 				},
 
@@ -710,7 +690,7 @@ var _slicedToArray = function () { function sliceIterator(arr, i) { var _arr = [
 				},
 
 				isRunning: function isRunning() {
-					return this.ok && this.reg.PC < this.memory.length;
+					return this.ok && this.reg[PC] < this.memory.length;
 				},
 
 				runWord: function runWord(count) {
@@ -722,7 +702,7 @@ var _slicedToArray = function () { function sliceIterator(arr, i) { var _arr = [
 				},
 
 				_runWord: function _runWord() {
-					var _splitWord = splitWord(this.memory[this.reg.PC]),
+					var _splitWord = splitWord(this.memory[this.reg[PC]]),
 					    _splitWord2 = _slicedToArray(_splitWord, 5),
 					    op = _splitWord2[0],
 					    rj = _splitWord2[1],
@@ -732,8 +712,8 @@ var _slicedToArray = function () { function sliceIterator(arr, i) { var _arr = [
 
 					var value = this._getValue(m, ri, addr);
 
-					this.lastPosition = this.reg.PC;
-					this.reg.PC++;
+					this.lastPosition = this.reg[PC];
+					this.reg[PC]++;
 
 					switch (op) {
 						case OP.STORE:
@@ -790,7 +770,7 @@ var _slicedToArray = function () { function sliceIterator(arr, i) { var _arr = [
 
 							break;
 						case OP.JUMP:
-							this.reg.PC = this.memory[addr];
+							this.reg[PC] = this.memory[addr];
 
 							break;
 						case OP.JNEG:
@@ -808,7 +788,7 @@ var _slicedToArray = function () { function sliceIterator(arr, i) { var _arr = [
 						case OP.JLES:
 							break;
 						case OP.JEQU:
-							if (this.SR & BIT_E) this.reg.PC = this.memory[addr];
+							if (this.SR & BIT_E) this.reg[PC] = this.memory[addr];
 
 							break;
 						case OP.JGRE:
@@ -816,7 +796,7 @@ var _slicedToArray = function () { function sliceIterator(arr, i) { var _arr = [
 						case OP.JNLES:
 							break;
 						case OP.JNEQU:
-							if (!(this.SR & BIT_E)) this.reg.PC = this.memory[addr];
+							if (!(this.SR & BIT_E)) this.reg[PC] = this.memory[addr];
 
 							break;
 						case OP.JNGRE:
