@@ -5,12 +5,29 @@
 var chai = require('chai');
 var ttk91js = require('./ttk91js.js');
 
+describe('Misc', () => {
+	describe('wordToString', () => {
+		it('NOP', () => {
+			chai.expect(ttk91js.wordToString(0)).to.be.equal('NOP');
+		});
+		it('LOAD', () => {
+			chai.expect(ttk91js.wordToString(35652472)).to.be.equal('LOAD R1, =888(R0)');
+		});
+		it('ADD', () => {
+			chai.expect(ttk91js.wordToString(287440896)).to.be.equal('ADD R1, =0(R2)');
+		});
+		it('JUMP', () => {
+			chai.expect(ttk91js.wordToString(536870912)).to.be.equal('JUMP 0');
+		});
+	})
+});
+
 describe('Compile', function() {
-	describe('DC, LOAD, OUT', function() {
-		let data = ttk91js.compile('y DC 20\nX DC 10\nLOAD R1, y\nOUT R1, =CRT\n');
+	describe('NOP, DC, LOAD, OUT', function() {
+		let data = ttk91js.compile('y DC 20\nX DC 10\nLOAD R1, y\nNOP\nOUT R1, =CRT\n');
 
 		it('Instruction bytes', function() {
-			chai.expect(data.code).to.deep.equal([36175874, 69206016]);
+			chai.expect(data.code).to.deep.equal([36175875, 0, 69206016]);
 		});
 
 		it('Symbols', function() {
