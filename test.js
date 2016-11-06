@@ -100,5 +100,3 @@ describe('Machine', function() {
 		
 	});
 });
-
-//test
