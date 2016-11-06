@@ -14,11 +14,12 @@ for(let op in global.OP) {
 }
 
 function wordToString(word) {
-	if(word === 0) {
+	let [op, rj, m, ri, addr] = global.splitWord(word);
+
+	if(op === 0) {
 		return 'NOP';
 	}
 
-	let [op, rj, m, ri, addr] = global.splitWord(word);
 
 	var ms = '';
 	switch(m) {
