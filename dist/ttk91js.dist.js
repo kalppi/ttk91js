@@ -620,6 +620,26 @@ var _slicedToArray = function () { function sliceIterator(arr, i) { var _arr = [
 			var FP = 7;
 			var PC = 8;
 
+			function Ttk91jsRuntimeException(message, line) {
+				this.name = 'Ttk91jsRuntimeException';
+				this.message = message;
+				this.line = line;
+			}
+
+			Ttk91jsRuntimeException.prototype.toString = function () {
+				return this.name + ': ' + this.message;
+			};
+
+			function Ttk91jsApiException(message, line) {
+				this.name = 'Ttk91jsApiException';
+				this.message = message;
+				this.line = line;
+			}
+
+			Ttk91jsRuntimeException.prototype.toString = function () {
+				return this.name + ': ' + this.message;
+			};
+
 			function splitWord(word) {
 				return [(word & 0xff << 24) >> 24, //op
 				(word & 0x7 << 21) >> 21, //rj
@@ -641,6 +661,7 @@ var _slicedToArray = function () { function sliceIterator(arr, i) { var _arr = [
 				};
 
 				this.lastPosition = 0;
+				this.data = null;
 
 				this.reset();
 			}
@@ -679,11 +700,6 @@ var _slicedToArray = function () { function sliceIterator(arr, i) { var _arr = [
 					return this.memory;
 				},
 
-				getRealLine: function getRealLine() {
-					return this.data.lineMap[this.lastPosition];
-				},
-
-
 				stop: function stop() {
 					this.ok = false;
 				},
@@ -697,6 +713,7 @@ var _slicedToArray = function () { function sliceIterator(arr, i) { var _arr = [
 					this.SR = 0;
 					this.reg.fill(0);
 					this.memory.fill(0);
+					this.data = null;
 				},
 
 				run: function run(max) {
