@@ -7,7 +7,7 @@ if git diff --name-only | grep 'ttk91js.*js'; then
 	RESULT=$?
 fi
 
-if [ $RESULT -eq 0 ]; then
+if [ $RESULT -eq 0 ]; then
 	gulp build-dist
 	git add dist/*
 fi
