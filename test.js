@@ -6,9 +6,9 @@ var chai = require('chai');
 var ttk91js = require('./ttk91js.js');
 
 describe('Compile', function() {
-	var data = ttk91js.compile('y DC 20\nX DC 10\nLOAD R1, y\nOUT R1, =CRT\n');
-
 	describe('DC, LOAD, OUT', function() {
+		let data = ttk91js.compile('y DC 20\nX DC 10\nLOAD R1, y\nOUT R1, =CRT\n');
+
 		it('Instruction bytes', function() {
 			chai.expect(data.code).to.deep.equal([36175874, 69206016]);
 		});
@@ -19,6 +19,44 @@ describe('Compile', function() {
 
 		it('Data', function() {
 			chai.expect(data.data).to.deep.equal([20, 10]);
+		});
+	});
+
+	describe('error handling', () => {
+		it('Invalid op-code', () => {
+			chai.expect(() => {
+				ttk91js.compile('x DEC 20');
+			}).to.throw('opcode');
+
+			chai.expect(() => {
+				ttk91js.compile('LAUD R1, =5');
+			}).to.throw('opcode');
+		});
+
+		it('Invalid register', () => {
+			chai.expect(() => {
+				ttk91js.compile('LOAD R9, =5');
+			}).to.throw('register');
+		});
+
+		it('Invalid symbol', () => {
+			chai.expect(() => {
+				ttk91js.compile('STORE R1, x');
+			}).to.throw('symbol');
+
+			chai.expect(() => {
+				ttk91js.compile('LOAD R1, x');
+			}).to.throw('symbol');
+		});
+
+		it('Invalid syntax', () => {
+			chai.expect(() => {
+				ttk91js.compile('STORE R1 x');
+			}).to.throw('syntax');
+
+			chai.expect(() => {
+				ttk91js.compile('LOAD R1, =0(R1');
+			}).to.throw('syntax');
 		});
 	});
 });
@@ -97,6 +135,5 @@ describe('Machine', function() {
 
 			machine.run();
 		});
-		
 	});
 });
