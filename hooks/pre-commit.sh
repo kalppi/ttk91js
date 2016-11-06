@@ -1,8 +1,11 @@
 git stash -q --keep-index
 
-npm test
+RESULT=0
 
-RESULT=$?
+if git diff --name-only | grep 'ttk91js.*js'; then
+	npm test
+	RESULT=$?
+fi
 
 git stash pop -q
 
