@@ -322,6 +322,12 @@ var compile = function(code) {
 		if(d.length > 2) {
 			ri = getRegister(d[3]);
 
+			if(ri !== 0) m = MODE.IMMEDIATE;
+
+			if(op == global.OP.STORE) {
+				m = MODE.IMMEDIATE;
+			}
+
 			if(d[2][0] == '=') {
 				m = MODE.IMMEDIATE;
 
@@ -351,8 +357,6 @@ var compile = function(code) {
 				if(/^[a-z]+$/i.test(d[2])) {
 					addr = getSymbolAddr(d[2]);
 				} else {
-					if(ri !== 0) m = MODE.IMMEDIATE;
-
 					addr = parseInt(d[2]);
 				}
 			}

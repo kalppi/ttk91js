@@ -7,6 +7,14 @@ var ttk91js = require('./ttk91js.js');
 
 var expect = chai.expect;
 
+/*
+var d = ttk91js.compile('x DC 10\nLOAD R1, =50\nSTORE R1, x\nSTORE R1, 3');
+console.log(d.code);
+
+
+return;*/
+
+
 describe('Compile', function() {
 	describe('Misc', () => {
 		it('Empty', () => {
@@ -138,7 +146,12 @@ describe('Machine', function() {
 		machine2.load(data2);
 
 		it('Memory layout after 4 steps', function() {
+			//console.log(machine2.getMemory());
+
+
 			machine2.runWord(4);
+
+
 
 			let memory = machine2.getMemory();
 

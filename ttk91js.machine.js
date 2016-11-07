@@ -162,7 +162,7 @@ Machine.prototype = {
 					this.trigger('memory-write', addr, this.getMemoryAt(addr), this.reg[rj]);
 				}
 
-				this.setMemoryAt(addr, this.reg[rj]);
+				this.setMemoryAt(value, this.reg[rj]);
 
 				break;
 			case OP.LOAD:
