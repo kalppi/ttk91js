@@ -1522,6 +1522,8 @@ var _typeof = typeof Symbol === "function" && typeof Symbol.iterator === "symbol
 				},
 
 				_runWord: function _runWord() {
+					this.oldPC = this.reg[PC];
+
 					var _global$splitWord3 = global.splitWord(this.getMemoryAt(this.reg[PC])),
 					    _global$splitWord4 = _slicedToArray(_global$splitWord3, 5),
 					    op = _global$splitWord4[0],
@@ -1532,7 +1534,6 @@ var _typeof = typeof Symbol === "function" && typeof Symbol.iterator === "symbol
 
 					var value = this._getValue(m, ri, addr);
 
-					this.oldPC = this.reg[PC];
 					this.reg[PC]++;
 
 					switch (op) {
