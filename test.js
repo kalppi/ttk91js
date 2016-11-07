@@ -67,6 +67,12 @@ describe('Compile', function() {
 			argcount: [
 				'STORE R1',
 				'LOAD R1'
+			],
+			syntax: [
+				'STORE R1 x',
+				'LOAD R1, =0(R1',
+				'LOAD R1,',
+				'LOAD R1, ='
 			]
 		};
 
@@ -77,7 +83,7 @@ describe('Compile', function() {
 
 		};
 
-		describe('Exceptions', () => {
+		describe('Compile exceptions', () => {
 			for(let type in exceptions) {
 				describe('Invalid ' + type, () => {
 					for(let c of exceptions[type]) {
@@ -90,8 +96,9 @@ describe('Compile', function() {
 		});
 		
 		describe('Exception line numbers', () => {
+			let i = 0;
 			for(let c in linenumbers) {
-				it('line should be ' + linenumbers[c], (done) => {
+				it(String.fromCharCode(65+i), (done) => {
 					try {
 						ttk91js.compile(c);
 					} catch(e) {
@@ -99,23 +106,7 @@ describe('Compile', function() {
 						done();
 					}
 				});
-			}
-		});
-
-		describe('Invalid syntax', () => {
-			var code = [
-				'STORE R1 x',
-				'LOAD R1, =0(R1',
-				'LOAD R1,',
-				'LOAD R1, ='
-			];
-
-			for(let c of code) {
-				it(c, () => {
-					expect(() => {
-						ttk91js.compile(c);
-					}).to.throw('syntax');
-				});
+				i++;
 			}
 		});
 	});
@@ -154,12 +145,25 @@ describe('Machine', function() {
 	});
 
 	describe('Error handling', () => {
-		describe('Exceptions', () => {
+		describe('Runtime exceptions', () => {
 			it('access outside of program memory', () => {
 				let machine = ttk91js.createMachine({memory: memoryLimit});
 
 				expect(machine.getMemoryAt.bind(machine, -1)).to.throw('access');
 				expect(machine.getMemoryAt.bind(machine, memoryLimit)).to.throw('access');
+			});
+
+			it('access outside of program line number', (done) => {
+				let machine = ttk91js.createMachine({memory: memoryLimit});
+				let data = ttk91js.compile('x DC 1\nLOAD R1, =111\nLOAD R2, =222\nLOAD R3, 333');
+				machine.load(data);
+
+				try {
+					machine.run();
+				} catch(e) {
+					expect(e.line).to.equal(2);
+					done();
+				}
 			});
 		});
 	});

@@ -145,10 +145,11 @@ Machine.prototype = {
 	},
 
 	_runWord: function() {
+		this.oldPC = this.reg[PC];
+		
 		var [op, rj, m, ri, addr] = global.splitWord(this.getMemoryAt(this.reg[PC]));
 		var value = this._getValue(m, ri, addr);
 
-		this.oldPC = this.reg[PC];
 		this.reg[PC]++;
 
 		switch(op) {
