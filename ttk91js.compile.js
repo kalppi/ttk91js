@@ -37,6 +37,43 @@ function makeWord(op, rj, m, ri, addr) {
 	return word;
 }
 
+function getOpArgCount(op) {
+	op = global.OP[op];
+
+	if(op === global.OP.NOP) return 0;
+	else if(op >= global.OP.JUMP && op <= global.OP.JNGRE) {
+		return 1;
+	}
+
+	return 2;
+}
+
+function isRegister(reg) {
+	if(reg.length != 2) return false;
+	else if(reg == 'SP' || reg == 'FP') return true;
+	else return (reg[0] == 'R' && /[0-9]/.test(reg[1]));
+}
+
+function isSymbol(s) {
+	if(s[0] == '=' || s[0] == '@') {
+		s = s.substring(1);
+	}
+
+	return /^[a-z]+$/i.test(s);
+}
+
+function isInteger(s) {
+	if(s[0] == '=' || s[0] == '@') {
+		s = s.substring(1);
+	}
+
+	return /^[0-9]+$/.test(s);
+}
+
+function isValidArgument(s) {
+	return (isSymbol(s) || isRegister(s) || isInteger(s));
+}
+
 function prepare(code) {
 	var lines = code.split('\n');
 	var instructions = [];
@@ -44,14 +81,6 @@ function prepare(code) {
 
 	var symbols = [];
 	var data = [];
-
-	function isSymbol(s) {
-		if(s[0] == '=' || s[0] == '@') {
-			s = s.substring(1);
-		}
-
-		return /^[a-z]+$/i.test(s);
-	}
 
 	function getSymbol(s) {
 		if(s[0] == '=' || s[0] == '@') {
@@ -78,7 +107,7 @@ function prepare(code) {
 	for(let l = 0; l < lines.length; l++) {
 		var line = lines[l].trim();
 
-		var i = line.indexOf(';');
+		let i = line.indexOf(';');
 		if(i != -1) {
 			line = line.substring(0, i);
 		}
@@ -87,7 +116,16 @@ function prepare(code) {
 			continue;
 		}
 
-		var parts = line.split(/[\s]+/);
+		line = line.replace(/\s+/g, ' ');
+
+		i = line.indexOf(' ');
+		let parts = null;
+
+		if(i == -1) {
+			parts = [line.trim()];
+		} else {
+			parts = [line.substring(0, i), line.substring(i + 1)];
+		}
 
 		if(OPS.indexOf(parts[0]) == -1) {
 			symbols.push({
@@ -96,7 +134,8 @@ function prepare(code) {
 				type: 'absolute'
 			});
 			
-			parts.shift();
+			i = parts[1].indexOf(' ');
+			parts = [parts[1].substring(0, i), parts[1].substring(i + 1)];
 		}
 
 		if(parts[0] == 'DC') {
@@ -111,53 +150,73 @@ function prepare(code) {
 
 			data.push(value);
 		} else {
-			if(parts.length == 3) {
+			let op = parts.shift();
+
+			let args = [];
+			if(parts.length > 0) {
+				args = parts.join('').split(',').map((s) => {
+					return s.trim();
+				});
+			}
+
+			if(OPS.indexOf(op) == -1) {
+				throw new Ttk91jsCompileException('unknown opcode (' + op +')', l);
+			}
+
+			args.forEach((arg) => {
+				if(!isValidArgument(arg)) {
+					throw new Ttk91jsCompileException('syntax error (' + line + ')', l);
+				}
+			});
+
+			if(getOpArgCount(op) != args.length) {
+				throw new Ttk91jsCompileException('wrong argcount (' + op + ')');
+			}
+
+
+			/*if(parts.length == 3) {
 				if(parts[1][parts[1].length - 1] != ',') {
 					throw new Ttk91jsCompileException('syntax error', l);
 				} else {
 					parts[1] = parts[1].substring(0, parts[1].length - 1);
 				}
-			}
+			}*/
 
-			if(parts.length == 3) {
-				i = parts[2].indexOf('(');
+			if(args.length == 2) {
+				i = args[1].indexOf('(');
 				if(i != -1) {
-					var j = parts[2].indexOf(')', i);
+					var j = args[1].indexOf(')', i);
 					if(j == -1) {
 						throw new Ttk91jsCompileException('syntax error', l);
 					} else {
-						parts.push(parts[2].substring(i+1,j));
-						parts[2] = parts[2].substring(0, i);
+						args.push(args[1].substring(i+1,j));
+						args[2] = parts[1].substring(0, i);
 					}
 				} else {
-					if(parts[2][0] == '=') {
-						parts.push('R0');
-					} else if(parts[2][0] == '@') {
-						if(parts[2][1] == 'R') {
-							parts.push('R' + parts[2][2]);
-							parts[2] = '0';
+					if(args[1][0] == '=') {
+						args.push('R0');
+					} else if(args[1][0] == '@') {
+						if(args[1][1] == 'R') {
+							args.push('R' + args[1][2]);
+							args[1] = '0';
 						} else {
-							parts.push('R0');
+							args.push('R0');
 						}
 					} else {
-						if(parts[2][0] == 'R') {
-							parts.push(parts[2]);
-							parts[2] = '=0';
+						if(args[1][0] == 'R') {
+							args.push(args[1]);
+							args[2] = '=0';
 						} else {
-							parts.push('R0');
+							args.push('R0');
 						}
 					}
 				}
 			}
 
-			if(OPS.indexOf(parts[0]) == -1) {
-				throw new Ttk91jsCompileException('unknown opcode (' + parts[0] +')', l);
-			}
-
-			parts.forEach((part) => {
-				if(part.length == 2 && part[0] == 'R') {
-					if(/0-9/.test(part[1]) || parseInt(part[1]) > 7) {
-						throw new Ttk91jsCompileException('invalid register (' + part + ')', l);
+			args.forEach((arg) => {
+				if(arg.length == 2 && arg[0] == 'R') {
+					if(/0-9/.test(arg[1]) || parseInt(arg[1]) > 7) {
+						throw new Ttk91jsCompileException('invalid register (' + arg + ')', l);
 					}
 				}
 			});
@@ -166,7 +225,7 @@ function prepare(code) {
 
 			instructions.push({
 				line: l,
-				code: parts
+				code: [op].concat(args)
 			});
 		}
 	}
@@ -204,10 +263,6 @@ var compile = function(code) {
 				return data.symbols[i].addr;
 			}
 		}
-	}
-
-	function isRegister(reg) {
-		return (reg == 'SP' || (reg.length == 2 && reg[0] == 'R'));
 	}
 
 	function getRegister(reg) {

@@ -5,6 +5,7 @@
 var chai = require('chai');
 var ttk91js = require('./ttk91js.js');
 
+
 describe('Misc', () => {
 	describe('wordToString', () => {
 		it('NOP', () => {
@@ -23,7 +24,7 @@ describe('Misc', () => {
 });
 
 describe('Compile', function() {
-	describe('misc', () => {
+	describe('Misc', () => {
 		it('Empty', () => {
 			let data = ttk91js.compile('');
 
@@ -48,68 +49,73 @@ describe('Compile', function() {
 		});
 	});
 
-	describe('error handling', () => {
-		it('Invalid op-code', () => {
-			chai.expect(() => {
-				ttk91js.compile('x DEC 20');
-			}).to.throw('opcode');
+	describe('Error handling', () => {
+		let exceptions = {
+			opcode: [
+				'x DEC 20',
+				'LAUD R1, =5'
+			],
+			register: [
+				'LOAD R9, =5',
 
-			chai.expect(() => {
-				ttk91js.compile('LAUD R1, =5');
-			}).to.throw('opcode');
+			],
+			symbol: [
+				'STORE R1, x',
+				'LOAD R1, x'
+			],
+			argcount: [
+				'STORE R1',
+				'LOAD R1'
+			]
+		};
+
+		let linenumbers = {
+			'y DC 10\nx DEC 20': 1,
+			'z DC 1\n\nLOAD R1, =1\nLOAD R2, =2\nLOAD R9, =5': 4,
+			'x DC 1\ny DC 2\nLOAD R1, =3\n\nSTORE R1, z': 4
+
+		};
+
+		describe('Exceptions', () => {
+			for(let type in exceptions) {
+				describe('Invalid ' + type, () => {
+					for(let c of exceptions[type]) {
+						it(c, () => {
+							chai.expect(ttk91js.compile.bind(ttk91js, c)).to.throw(type);
+						});
+					}
+				});
+			}
 		});
-
-		it('Invalid op-code line number', (done) => {
-			try {
-				ttk91js.compile('y DC 10\nx DEC 20');
-			} catch(e) {
-				chai.expect(e.line).to.equal(1);
-				done();
+		
+		describe('Exception line numbers', () => {
+			for(let c in linenumbers) {
+				it('line should be ' + linenumbers[c], (done) => {
+					try {
+						ttk91js.compile(c);
+					} catch(e) {
+						chai.expect(e.line).to.equal(linenumbers[c]);
+						done();
+					}
+				});
 			}
 		});
 
-		it('Invalid register', () => {
-			chai.expect(() => {
-				ttk91js.compile('LOAD R9, =5');
-			}).to.throw('register');
-		});
+		describe('Invalid syntax', () => {
+			var code = [
+				'STORE R1 x',
+				'LOAD R1, =0(R1',
+				'LOAD R1,',
+				'LOAD R1, ='
+			];
 
-		it('Invalid register line number', (done) => {
-			try {
-				ttk91js.compile('z DC 1\n\nLOAD R1, =1\nLOAD R2, =2\nLOAD R9, =5');
-			} catch(e) {
-				chai.expect(e.line).to.equal(4);
-				done();
+			for(let c of code) {
+				it(c, () => {
+					chai.expect(() => {
+						ttk91js.compile(c);
+					}).to.throw('syntax');
+				});
 			}
-		});
-
-		it('Invalid symbol', () => {
-			chai.expect(() => {
-				ttk91js.compile('STORE R1, x');
-			}).to.throw('symbol');
-
-			chai.expect(() => {
-				ttk91js.compile('LOAD R1, x');
-			}).to.throw('symbol');
-		});
-
-		it('Invalid symbol line number', (done) => {
-			try {
-				ttk91js.compile('x DC 1\ny DC 2\nLOAD R1, =3\n\nSTORE R1, z');
-			} catch(e) {
-				chai.expect(e.line).to.equal(4);
-				done();
-			}
-		});
-
-		it('Invalid syntax', () => {
-			chai.expect(() => {
-				ttk91js.compile('STORE R1 x');
-			}).to.throw('syntax');
-
-			chai.expect(() => {
-				ttk91js.compile('LOAD R1, =0(R1');
-			}).to.throw('syntax');
 		});
 	});
 });
@@ -117,7 +123,7 @@ describe('Compile', function() {
 describe('Machine', function() {
 	let memoryLimit = 7;
 
-	describe('memory', function() {
+	describe('Memory', function() {
 		let machine1 = ttk91js.createMachine({memory: memoryLimit});
 		let data1 = ttk91js.compile('y DC 20\nX DC 10\nLOAD R1, y\nOUT R1, =CRT\n');
 		machine1.load(data1);
@@ -146,7 +152,7 @@ describe('Machine', function() {
 		});
 	});
 
-	describe('triggers', function() {
+	describe('Triggers', function() {
 		it('memory-write', (done) => {
 			let machine = ttk91js.createMachine({
 				memory: memoryLimit,
@@ -190,7 +196,7 @@ describe('Machine', function() {
 		});
 	});
 
-	describe('stdout', () => {
+	describe('Stdout', () => {
 		let machine = ttk91js.createMachine({
 			memory: memoryLimit,
 		});
