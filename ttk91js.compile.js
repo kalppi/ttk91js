@@ -187,18 +187,9 @@ function prepare(code) {
 				});
 			}
 
+
 			if(OPS.indexOf(op) == -1) {
 				throw new Ttk91jsCompileException('unknown opcode (' + op +')', l);
-			}
-
-			args.forEach((arg) => {
-				if(!isValidArgument(arg)) {
-					throw new Ttk91jsCompileException('syntax error (' + line + ')', l);
-				}
-			});
-
-			if(getOpArgCount(op) != args.length) {
-				throw new Ttk91jsCompileException('wrong argcount (' + op + ')');
 			}
 
 			if(args.length == 2) {
@@ -209,7 +200,7 @@ function prepare(code) {
 						throw new Ttk91jsCompileException('syntax error', l);
 					} else {
 						args.push(args[1].substring(i+1,j));
-						args[2] = parts[1].substring(0, i);
+						args[1] = args[1].substring(0, i);
 					}
 				} else {
 					if(args[1][0] == '=') {
@@ -224,7 +215,7 @@ function prepare(code) {
 					} else {
 						if(args[1][0] == 'R') {
 							args.push(args[1]);
-							args[2] = '=0';
+							args[1] = '=0';
 						} else {
 							args.push('R0');
 						}
@@ -233,12 +224,22 @@ function prepare(code) {
 			}
 
 			args.forEach((arg) => {
+				if(!isValidArgument(arg)) {
+					throw new Ttk91jsCompileException('syntax error (' + line + ')', l);
+				}
+			});
+
+			args.forEach((arg) => {
 				if(arg.length == 2 && arg[0] == 'R') {
 					if(/0-9/.test(arg[1]) || parseInt(arg[1]) > 7) {
 						throw new Ttk91jsCompileException('invalid register (' + arg + ')', l);
 					}
 				}
 			});
+
+			if(getOpArgCount(op) != args.length - 1) {
+				throw new Ttk91jsCompileException('wrong argcount (' + op + ')');
+			}
 
 			sourceMap[instructions.length] = l;
 
@@ -319,6 +320,8 @@ var compile = function(code) {
 		}
 
 		if(d.length > 2) {
+			ri = getRegister(d[3]);
+
 			if(d[2][0] == '=') {
 				m = MODE.IMMEDIATE;
 
@@ -348,11 +351,13 @@ var compile = function(code) {
 				if(/^[a-z]+$/i.test(d[2])) {
 					addr = getSymbolAddr(d[2]);
 				} else {
+					if(ri !== 0) m = MODE.IMMEDIATE;
+
 					addr = parseInt(d[2]);
 				}
 			}
 
-			ri = getRegister(d[3]);
+			
 		}
 
 		if(op >= global.OP.JUMP && op <= global.OP.JNGRE) {

@@ -7,13 +7,6 @@ var ttk91js = require('./ttk91js.js');
 
 var expect = chai.expect;
 
-/*let data = ttk91js.compile('z DC 2222\nx DC 1111\nLOAD R1, @x');
-console.log(data);
-
-ttk91js.debug.word(36700162);
-
-return;*/
-
 describe('Compile', function() {
 	describe('Misc', () => {
 		it('Empty', () => {
@@ -30,6 +23,9 @@ describe('Compile', function() {
 
 			let data2 = ttk91js.compile('x DS 2\nLOAD R1, =x');
 			expect(data2.code).to.deep.equal([35651585]);
+
+			let data3 = ttk91js.compile('LOAD R4, =100');
+			expect(data3.code).to.deep.equal([41943140]);
 		});
 
 		it('Direct', function() {
@@ -38,6 +34,12 @@ describe('Compile', function() {
 
 			let data2 = ttk91js.compile('x DS 2\nLOAD R1, x');
 			expect(data2.code).to.deep.equal([36175873]);
+
+			let data3 = ttk91js.compile('STORE R2, 0(R1)');
+			expect(data3.code).to.deep.equal([21037056]);
+
+			let data4 = ttk91js.compile('LOAD R4, 500');
+			expect(data4.code).to.deep.equal([42467828]);
 		});
 
 		it('Indirect', function() {
