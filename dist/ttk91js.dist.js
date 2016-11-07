@@ -1216,11 +1216,16 @@ var _typeof = typeof Symbol === "function" && typeof Symbol.iterator === "symbol
 									case 'HALT':
 										addr = SVC.HALT;
 										break;
+									default:
+										addr = getSymbolAddr(s);
 								}
 							}
 						} else if (d[2][0] == '@') {
 							m = MODE.INDIRECT;
-							addr = parseInt(d[2].substring(1));
+
+							var _s = d[2].substring(1);
+
+							addr = getSymbolAddr(_s);
 						} else {
 							if (/^[a-z]+$/i.test(d[2])) {
 								addr = getSymbolAddr(d[2]);
