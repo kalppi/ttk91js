@@ -865,7 +865,9 @@ var _typeof = typeof Symbol === "function" && typeof Symbol.iterator === "symbol
 		function getOpArgCount(op) {
 			op = global.OP[op];
 
-			if (op === global.OP.NOP) return 0;else if (op >= global.OP.JUMP && op <= global.OP.JNGRE) {
+			if (op === global.OP.NOP) return 0;else if (op == global.OP.NOT) {
+				return 1;
+			} else if (op >= global.OP.JUMP && op <= global.OP.JNGRE) {
 				return 1;
 			}
 
@@ -1558,6 +1560,30 @@ var _typeof = typeof Symbol === "function" && typeof Symbol.iterator === "symbol
 							break;
 						case OP.MUL:
 							this.reg[rj] *= value;
+							break;
+						case OP.MOD:
+							this.reg[rj] = this.reg[rj] % value;
+							break;
+						case OP.AND:
+							this.reg[rj] = this.reg[rj] & value;
+							break;
+						case OP.OR:
+							this.reg[rj] = this.reg[rj] | value;
+							break;
+						case OP.XOR:
+							this.reg[rj] = this.reg[rj] ^ value;
+							break;
+						case OP.SHL:
+							this.reg[rj] = this.reg[rj] << value;
+							break;
+						case OP.SHR:
+							this.reg[rj] = this.reg[rj] >> value;
+							break;
+						case OP.SHRA:
+							this.reg[rj] = this.reg[rj] >>> value;
+							break;
+						case OP.NOT:
+							this.reg[rj] = ~this.reg[rj];
 							break;
 						case OP.SVC:
 							switch (addr) {
