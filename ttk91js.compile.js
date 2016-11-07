@@ -322,7 +322,7 @@ var compile = function(code) {
 			if(d[2][0] == '=') {
 				m = MODE.IMMEDIATE;
 
-				var s = d[2].substring(1);
+				let s = d[2].substring(1);
 
 				if(/^[0-9]+$/i.test(s)) {
 					addr = parseInt(s);
@@ -334,11 +334,16 @@ var compile = function(code) {
 						case 'HALT':
 							addr = SVC.HALT;
 							break;
+						default:
+							addr = getSymbolAddr(s);
 					}
 				}
 			} else if(d[2][0] == '@') {
 				m = MODE.INDIRECT;
-				addr = parseInt(d[2].substring(1));
+
+				let s = d[2].substring(1);
+
+				addr = getSymbolAddr(s);
 			} else {
 				if(/^[a-z]+$/i.test(d[2])) {
 					addr = getSymbolAddr(d[2]);

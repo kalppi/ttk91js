@@ -7,22 +7,12 @@ var ttk91js = require('./ttk91js.js');
 
 var expect = chai.expect;
 
-describe('Misc', () => {
-	describe('wordToString', () => {
-		it('NOP', () => {
-			expect(ttk91js.wordToString(0)).to.be.equal('NOP');
-		});
-		it('LOAD', () => {
-			expect(ttk91js.wordToString(35652472)).to.be.equal('LOAD R1, =888(R0)');
-		});
-		it('ADD', () => {
-			expect(ttk91js.wordToString(287440896)).to.be.equal('ADD R1, =0(R2)');
-		});
-		it('JUMP', () => {
-			expect(ttk91js.wordToString(536870912)).to.be.equal('JUMP 0');
-		});
-	})
-});
+/*let data = ttk91js.compile('z DC 2222\nx DC 1111\nLOAD R1, @x');
+console.log(data);
+
+ttk91js.debug.word(36700162);
+
+return;*/
 
 describe('Compile', function() {
 	describe('Misc', () => {
@@ -33,21 +23,31 @@ describe('Compile', function() {
 		});
 	});
 
-	describe('NOP, DC, LOAD, OUT', function() {
-		let data = ttk91js.compile('y DC 20\nX DC 10\nLOAD R1, y\nNOP\nOUT R1, =CRT\n');
+	describe('Addressing', () => {
+		it('Immediate', function() {
+			let data1 = ttk91js.compile('z DC 2222\nx DC 1111\nLOAD R1, =x');
+			expect(data1.code).to.deep.equal([35651586]);
 
-		it('Instruction bytes', function() {
-			expect(data.code).to.deep.equal([36175875, 524288, 69206016]);
+			let data2 = ttk91js.compile('x DS 2\nLOAD R1, =x');
+			expect(data2.code).to.deep.equal([35651585]);
 		});
 
-		it('Symbols', function() {
-			expect(data.symbols[0].name).to.equal('y');
-			expect(data.symbols[1].name).to.equal('X');
+		it('Direct', function() {
+			let data1 = ttk91js.compile('z DC 2222\nx DC 1111\nLOAD R1, x');
+			expect(data1.code).to.deep.equal([36175874]);
+
+			let data2 = ttk91js.compile('x DS 2\nLOAD R1, x');
+			expect(data2.code).to.deep.equal([36175873]);
 		});
 
-		it('Data', function() {
-			expect(data.data).to.deep.equal([{value: 20, size: 1}, {value: 10, size: 1}]);
+		it('Indirect', function() {
+			let data1 = ttk91js.compile('z DC 2222\nx DC 1111\nLOAD R1, @x');
+			expect(data1.code).to.deep.equal([36700162]);
+
+			let data2 = ttk91js.compile('x DS 2\nLOAD R1, @x');
+			expect(data2.code).to.deep.equal([36700161]);
 		});
+
 	});
 
 	describe('Error handling', () => {
@@ -232,5 +232,22 @@ describe('Machine', function() {
 
 			machine.run();
 		})
+	})
+});
+
+describe('Misc', () => {
+	describe('wordToString', () => {
+		it('NOP', () => {
+			expect(ttk91js.wordToString(0)).to.be.equal('NOP');
+		});
+		it('LOAD', () => {
+			expect(ttk91js.wordToString(35652472)).to.be.equal('LOAD R1, =888(R0)');
+		});
+		it('ADD', () => {
+			expect(ttk91js.wordToString(287440896)).to.be.equal('ADD R1, =0(R2)');
+		});
+		it('JUMP', () => {
+			expect(ttk91js.wordToString(536870912)).to.be.equal('JUMP 0');
+		});
 	})
 });
