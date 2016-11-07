@@ -5,20 +5,21 @@
 var chai = require('chai');
 var ttk91js = require('./ttk91js.js');
 
+var expect = chai.expect;
 
 describe('Misc', () => {
 	describe('wordToString', () => {
 		it('NOP', () => {
-			chai.expect(ttk91js.wordToString(0)).to.be.equal('NOP');
+			expect(ttk91js.wordToString(0)).to.be.equal('NOP');
 		});
 		it('LOAD', () => {
-			chai.expect(ttk91js.wordToString(35652472)).to.be.equal('LOAD R1, =888(R0)');
+			expect(ttk91js.wordToString(35652472)).to.be.equal('LOAD R1, =888(R0)');
 		});
 		it('ADD', () => {
-			chai.expect(ttk91js.wordToString(287440896)).to.be.equal('ADD R1, =0(R2)');
+			expect(ttk91js.wordToString(287440896)).to.be.equal('ADD R1, =0(R2)');
 		});
 		it('JUMP', () => {
-			chai.expect(ttk91js.wordToString(536870912)).to.be.equal('JUMP 0');
+			expect(ttk91js.wordToString(536870912)).to.be.equal('JUMP 0');
 		});
 	})
 });
@@ -28,7 +29,7 @@ describe('Compile', function() {
 		it('Empty', () => {
 			let data = ttk91js.compile('');
 
-			chai.expect(data.data).to.deep.equal([]);
+			expect(data.data).to.deep.equal([]);
 		});
 	});
 
@@ -36,16 +37,16 @@ describe('Compile', function() {
 		let data = ttk91js.compile('y DC 20\nX DC 10\nLOAD R1, y\nNOP\nOUT R1, =CRT\n');
 
 		it('Instruction bytes', function() {
-			chai.expect(data.code).to.deep.equal([36175875, 524288, 69206016]);
+			expect(data.code).to.deep.equal([36175875, 524288, 69206016]);
 		});
 
 		it('Symbols', function() {
-			chai.expect(data.symbols[0].name).to.equal('y');
-			chai.expect(data.symbols[1].name).to.equal('X');
+			expect(data.symbols[0].name).to.equal('y');
+			expect(data.symbols[1].name).to.equal('X');
 		});
 
 		it('Data', function() {
-			chai.expect(data.data).to.deep.equal([20, 10]);
+			expect(data.data).to.deep.equal([20, 10]);
 		});
 	});
 
@@ -81,7 +82,7 @@ describe('Compile', function() {
 				describe('Invalid ' + type, () => {
 					for(let c of exceptions[type]) {
 						it(c, () => {
-							chai.expect(ttk91js.compile.bind(ttk91js, c)).to.throw(type);
+							expect(ttk91js.compile.bind(ttk91js, c)).to.throw(type);
 						});
 					}
 				});
@@ -94,7 +95,7 @@ describe('Compile', function() {
 					try {
 						ttk91js.compile(c);
 					} catch(e) {
-						chai.expect(e.line).to.equal(linenumbers[c]);
+						expect(e.line).to.equal(linenumbers[c]);
 						done();
 					}
 				});
@@ -111,7 +112,7 @@ describe('Compile', function() {
 
 			for(let c of code) {
 				it(c, () => {
-					chai.expect(() => {
+					expect(() => {
 						ttk91js.compile(c);
 					}).to.throw('syntax');
 				});
@@ -131,10 +132,10 @@ describe('Machine', function() {
 		let memory = machine1.getMemory();
 
 		it('Amount of memory', function() {
-			chai.expect(memory.length).to.equal(memoryLimit);
+			expect(memory.length).to.equal(memoryLimit);
 		});
 		it('Memory layout', function() {
-			chai.expect(Array.from(memory)).to.deep.equal(
+			expect(Array.from(memory)).to.deep.equal(
 				[36175874, 69206016, 20, 10, 0, 0, 0]
 			);
 		});
@@ -148,7 +149,7 @@ describe('Machine', function() {
 
 			let memory = machine2.getMemory();
 
-			chai.expect(memory[4]).to.equal(60);
+			expect(memory[4]).to.equal(60);
 		});
 	});
 
@@ -164,9 +165,9 @@ describe('Machine', function() {
 			machine.load(data);
 
 			machine.bind('memory-write', (addr, oldValue, newValue) => {
-				chai.expect(oldValue).to.equal(1);
-				chai.expect(newValue).to.equal(2);
-				chai.expect(addr).to.equal(3);
+				expect(oldValue).to.equal(1);
+				expect(newValue).to.equal(2);
+				expect(addr).to.equal(3);
 
 				done();
 			});
@@ -185,9 +186,9 @@ describe('Machine', function() {
 			machine.load(data);
 
 			machine.bind('register-write', (addr, oldValue, newValue) => {
-				chai.expect(oldValue).to.be.equal(0);
-				chai.expect(newValue).to.be.equal(2);
-				chai.expect(addr).to.be.equal(3);
+				expect(oldValue).to.be.equal(0);
+				expect(newValue).to.be.equal(2);
+				expect(addr).to.be.equal(3);
 
 				done();
 			});
@@ -208,7 +209,7 @@ describe('Machine', function() {
 		it('redirect', (done) => {
 			machine.setStdout({
 				write: function(out) {
-					chai.expect(out).to.be.equal(123);
+					expect(out).to.be.equal(123);
 
 					done();
 				}
