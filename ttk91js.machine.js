@@ -21,9 +21,10 @@ const PC = 8;
 
 const OP = global.OP;
 
-function Ttk91jsRuntimeException(message) {
+function Ttk91jsRuntimeException(message, line) {
 	this.name = 'Ttk91jsRuntimeException';
 	this.message = message;
+	this.line = line;
 }
 
 Ttk91jsRuntimeException.prototype.toString = function() {
@@ -77,7 +78,7 @@ Machine.prototype = {
 
 	getMemoryAt: function(addr) {
 		if(addr < 0 || addr >= this.memory.length) {
-			throw new Ttk91jsRuntimeException('trying to access outside of program memory (' + addr + ')');
+			throw new Ttk91jsRuntimeException('trying to access outside of program memory (' + addr + ')', this.oldPC);
 		}
 
 		return this.memory[addr];
@@ -85,7 +86,7 @@ Machine.prototype = {
 
 	setMemoryAt: function(addr, value) {
 		if(addr < 0 || addr >= this.memory.length) {
-			throw new Ttk91jsRuntimeException('trying to access outside of program memory (' + addr + ')');
+			throw new Ttk91jsRuntimeException('trying to access outside of program memory (' + addr + ')', this.oldPC);
 		}
 
 		this.memory[addr] = value;
@@ -146,7 +147,7 @@ Machine.prototype = {
 		var [op, rj, m, ri, addr] = global.splitWord(this.getMemoryAt(this.reg[PC]));
 		var value = this._getValue(m, ri, addr);
 
-		var oldPC = this.reg[PC];
+		this.oldPC = this.reg[PC];
 
 		this.lastPosition = this.reg[PC];
 		this.reg[PC]++;
@@ -266,11 +267,11 @@ Machine.prototype = {
 			case OP.JNGRE:
 				break;
 			default:
-				throw new Ttk91jsRuntimeException('unknown opcode (' + op + ')');
+				throw new Ttk91jsRuntimeException('unknown opcode (' + op + ')', this.oldPC);
 		}
 
 		if(this.settings.triggerRegisterWrite) {
-			this.trigger('register-write', PC, oldPC, this.reg[PC]);
+			this.trigger('register-write', PC, this.oldPC, this.reg[PC]);
 		}
 	}
 };
