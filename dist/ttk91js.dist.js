@@ -1421,7 +1421,7 @@ var _typeof = typeof Symbol === "function" && typeof Symbol.iterator === "symbol
 					}
 				};
 
-				this.lastPosition = 0;
+				this.oldPC = 0;
 				this.data = null;
 
 				this.reset();
@@ -1491,6 +1491,7 @@ var _typeof = typeof Symbol === "function" && typeof Symbol.iterator === "symbol
 					this.reg.fill(0);
 					this.memory.fill(0);
 					this.data = null;
+					this.oldPC = 0;
 				},
 
 				run: function run(max) {
@@ -1532,8 +1533,6 @@ var _typeof = typeof Symbol === "function" && typeof Symbol.iterator === "symbol
 					var value = this._getValue(m, ri, addr);
 
 					this.oldPC = this.reg[PC];
-
-					this.lastPosition = this.reg[PC];
 					this.reg[PC]++;
 
 					switch (op) {
