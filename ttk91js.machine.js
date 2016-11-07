@@ -76,6 +76,22 @@ Machine.prototype = {
 		this.data = data;
 	},
 
+	getMemoryAt: function(addr) {
+		if(addr < 0 || addr >= this.memory.length) {
+			throw new Ttk91jsRuntimeException('trying to access outside of program memory (' + addr + ')');
+		}
+
+		return this.memory[addr];
+	},
+
+	setMemoryAt: function(addr, value) {
+		if(addr < 0 || addr >= this.memory.length) {
+			throw new Ttk91jsRuntimeException('trying to access outside of program memory (' + addr + ')');
+		}
+
+		this.memory[addr] = value;
+	},
+
 	getRegisters: function() {
 		return this.reg;
 	},
@@ -128,7 +144,7 @@ Machine.prototype = {
 	},
 
 	_runWord: function() {
-		var [op, rj, m, ri, addr] = global.splitWord(this.memory[this.reg[PC]]);
+		var [op, rj, m, ri, addr] = global.splitWord(this.getMemoryAt(this.reg[PC]));
 		var value = this._getValue(m, ri, addr);
 
 		var oldPC = this.reg[PC];
@@ -141,10 +157,10 @@ Machine.prototype = {
 				break;
 			case OP.STORE:
 				if(this.settings.triggerMemoryWrite) {
-					this.trigger('memory-write', addr, this.memory[addr], this.reg[rj]);
+					this.trigger('memory-write', addr, this.getMemoryAt(addr), this.reg[rj]);
 				}
 
-				this.memory[addr] = this.reg[rj];
+				this.setMemoryAt(addr, this.reg[rj]);
 
 				break;
 			case OP.LOAD:
@@ -237,7 +253,7 @@ Machine.prototype = {
 			case OP.JLES:
 				break;
 			case OP.JEQU:
-				if(this.SR & BIT_E) this.reg[PC] = this.memory[addr];
+				if(this.SR & BIT_E) this.reg[PC] = this.getMemoryAt(addr);
 			
 				break;
 			case OP.JGRE:
@@ -245,7 +261,7 @@ Machine.prototype = {
 			case OP.JNLES:
 				break;
 			case OP.JNEQU:
-				if(!(this.SR & BIT_E)) this.reg[PC] = this.memory[addr];
+				if(!(this.SR & BIT_E)) this.reg[PC] = this.getMemoryAt(addr);
 
 				break;
 			case OP.JNGRE:

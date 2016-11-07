@@ -153,6 +153,17 @@ describe('Machine', function() {
 		});
 	});
 
+	describe('Error handling', () => {
+		describe('Exceptions', () => {
+			it('access outside of program memory', () => {
+				let machine = ttk91js.createMachine({memory: memoryLimit});
+
+				expect(machine.getMemoryAt.bind(machine, -1)).to.throw('access');
+				expect(machine.getMemoryAt.bind(machine, memoryLimit)).to.throw('access');
+			});
+		});
+	});
+
 	describe('Triggers', function() {
 		it('memory-write', (done) => {
 			let machine = ttk91js.createMachine({
