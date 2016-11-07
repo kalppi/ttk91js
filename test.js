@@ -69,7 +69,8 @@ describe('Compile', function() {
 			],
 			argcount: [
 				'STORE R1',
-				'LOAD R1'
+				'LOAD R1',
+				'STORE'
 			],
 			syntax: [
 				'STORE R1 x',

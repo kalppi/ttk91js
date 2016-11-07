@@ -242,7 +242,7 @@ function prepare(code) {
 			});
 
 			if(getOpArgCount(op) != args.length - 1) {
-				throw new Ttk91jsCompileException('wrong argcount (' + op + ')');
+				throw new Ttk91jsCompileException('wrong argcount (' + op + ')', l);
 			}
 
 			sourceMap[instructions.length] = l;
