@@ -43,7 +43,7 @@ function Machine(settings) {
 		}
 	};
 
-	this.lastPosition = 0;
+	this.oldPC = 0;
 	this.data = null;
 
 	this.reset();
@@ -114,6 +114,7 @@ Machine.prototype = {
 		this.reg.fill(0);
 		this.memory.fill(0);
 		this.data = null;
+		this.oldPC = 0;
 	},
 
 	run: function(max) {
@@ -148,8 +149,6 @@ Machine.prototype = {
 		var value = this._getValue(m, ri, addr);
 
 		this.oldPC = this.reg[PC];
-
-		this.lastPosition = this.reg[PC];
 		this.reg[PC]++;
 
 		switch(op) {
