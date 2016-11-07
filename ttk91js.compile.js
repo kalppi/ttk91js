@@ -40,12 +40,42 @@ function makeWord(op, rj, m, ri, addr) {
 function prepare(code) {
 	var lines = code.split('\n');
 	var instructions = [];
-	var lineMap = {};
+	var sourceMap = {};
 
 	var symbols = [];
 	var data = [];
 
-	for(var l = 0; l < lines.length; l++) {
+	function isSymbol(s) {
+		if(s[0] == '=' || s[0] == '@') {
+			s = s.substring(1);
+		}
+
+		return /^[a-z]+$/i.test(s);
+	}
+
+	function getSymbol(s) {
+		if(s[0] == '=' || s[0] == '@') {
+			s = s.substring(1);
+		}
+
+		return s;
+	}
+
+	function symbolExists(s) {
+		for(let sym of symbols) {
+			if(sym.name == s) return true;
+		}
+
+		switch(s) {
+			case 'CRT':
+			case 'HALT':
+				return true;
+		}
+
+		return false;
+	}
+
+	for(let l = 0; l < lines.length; l++) {
 		var line = lines[l].trim();
 
 		var i = line.indexOf(';');
@@ -120,7 +150,7 @@ function prepare(code) {
 				}
 			}
 
-			if(parts[0] != 'DC' && OPS.indexOf(parts[0]) == -1) {
+			if(OPS.indexOf(parts[0]) == -1) {
 				throw new Ttk91jsCompileException('unknown opcode (' + parts[0] +')', l);
 			}
 
@@ -132,9 +162,28 @@ function prepare(code) {
 				}
 			});
 
-			lineMap[instructions.length] = l;
+			sourceMap[instructions.length] = l;
 
-			instructions.push(parts);
+			instructions.push({
+				line: l,
+				code: parts
+			});
+		}
+	}
+
+	for(let ins of instructions) {
+		if(ins.code.length == 2 && isSymbol(ins.code[1])) {
+			let symbol = getSymbol(ins.code[1]);
+
+			if(!symbolExists(symbol)) {
+				throw new Ttk91jsCompileException('unknown symbol (' + symbol + ')', ins.line);
+			}
+		} else if(ins.code.length == 4 && isSymbol(ins.code[2])) {
+			let symbol = getSymbol(ins.code[2]);
+
+			if(!symbolExists(symbol)) {
+				throw new Ttk91jsCompileException('unknown symbol (' + symbol + ')', ins.line);
+			}
 		}
 	}
 
@@ -142,7 +191,7 @@ function prepare(code) {
 		code: instructions,
 		symbols: symbols,
 		data: data,
-		lineMap: lineMap
+		sourceMap: sourceMap
 	};
 }
 
@@ -155,8 +204,6 @@ var compile = function(code) {
 				return data.symbols[i].addr;
 			}
 		}
-
-		throw new Ttk91jsCompileException('unknown symbol (' + symbol + ')');
 	}
 
 	function isRegister(reg) {
@@ -178,7 +225,9 @@ var compile = function(code) {
 		delete data.symbols[i].type;
 	}
 
-	for(var d of data.code) {
+	
+	for(let ins of data.code) {
+		var d = ins.code;
 		var op = global.OP[d[0]];
 
 		var rj = 0;
@@ -238,7 +287,7 @@ var compile = function(code) {
 		words.push(word);
 	}
 	
-	return {lines: data.code, code: words, symbols: data.symbols, data: data.data, lineMap: data.lineMap};
+	return {code: words, symbols: data.symbols, data: data.data, sourceMap: data.sourceMap};
 };
 
 module.exports = compile;

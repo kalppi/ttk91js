@@ -31,18 +31,6 @@ Ttk91jsRuntimeException.prototype.toString = function() {
 	return this.name + ': ' + this.message;
 };
 
-function Ttk91jsApiException(message, line) {
-	this.name = 'Ttk91jsApiException';
-	this.message = message;
-	this.line = line;
-}
-
-Ttk91jsRuntimeException.prototype.toString = function() {
-	return this.name + ': ' + this.message;
-};
-
-
-
 function Machine(settings) {
 	this.settings = settings;
 

@@ -23,6 +23,14 @@ describe('Misc', () => {
 });
 
 describe('Compile', function() {
+	describe('misc', () => {
+		it('Empty', () => {
+			let data = ttk91js.compile('');
+
+			chai.expect(data.data).to.deep.equal([]);
+		});
+	});
+
 	describe('NOP, DC, LOAD, OUT', function() {
 		let data = ttk91js.compile('y DC 20\nX DC 10\nLOAD R1, y\nNOP\nOUT R1, =CRT\n');
 
@@ -51,10 +59,28 @@ describe('Compile', function() {
 			}).to.throw('opcode');
 		});
 
+		it('Invalid op-code line number', (done) => {
+			try {
+				ttk91js.compile('y DC 10\nx DEC 20');
+			} catch(e) {
+				chai.expect(e.line).to.equal(1);
+				done();
+			}
+		});
+
 		it('Invalid register', () => {
 			chai.expect(() => {
 				ttk91js.compile('LOAD R9, =5');
 			}).to.throw('register');
+		});
+
+		it('Invalid register line number', (done) => {
+			try {
+				ttk91js.compile('z DC 1\n\nLOAD R1, =1\nLOAD R2, =2\nLOAD R9, =5');
+			} catch(e) {
+				chai.expect(e.line).to.equal(4);
+				done();
+			}
 		});
 
 		it('Invalid symbol', () => {
@@ -65,6 +91,15 @@ describe('Compile', function() {
 			chai.expect(() => {
 				ttk91js.compile('LOAD R1, x');
 			}).to.throw('symbol');
+		});
+
+		it('Invalid symbol line number', (done) => {
+			try {
+				ttk91js.compile('x DC 1\ny DC 2\nLOAD R1, =3\n\nSTORE R1, z');
+			} catch(e) {
+				chai.expect(e.line).to.equal(4);
+				done();
+			}
 		});
 
 		it('Invalid syntax', () => {
