@@ -1399,10 +1399,9 @@ var _typeof = typeof Symbol === "function" && typeof Symbol.iterator === "symbol
 
 			var OP = global.OP;
 
-			function Ttk91jsRuntimeException(message, line) {
+			function Ttk91jsRuntimeException(message) {
 				this.name = 'Ttk91jsRuntimeException';
 				this.message = message;
-				this.line = line;
 			}
 
 			Ttk91jsRuntimeException.prototype.toString = function () {
