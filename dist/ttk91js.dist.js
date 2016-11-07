@@ -1572,7 +1572,7 @@ var _typeof = typeof Symbol === "function" && typeof Symbol.iterator === "symbol
 							break;
 						case OP.STORE:
 							if (this.settings.triggerMemoryWrite) {
-								this.trigger('memory-write', addr, this.getMemoryAt(addr), this.reg[rj]);
+								this.trigger('memory-write', addr, this.getMemoryAt(value), this.reg[rj]);
 							}
 
 							this.setMemoryAt(value, this.reg[rj]);
