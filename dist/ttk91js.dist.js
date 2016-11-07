@@ -1453,6 +1453,22 @@ var _typeof = typeof Symbol === "function" && typeof Symbol.iterator === "symbol
 					this.data = data;
 				},
 
+				getMemoryAt: function getMemoryAt(addr) {
+					if (addr < 0 || addr >= this.memory.length) {
+						throw new Ttk91jsRuntimeException('trying to access outside of program memory (' + addr + ')');
+					}
+
+					return this.memory[addr];
+				},
+
+				setMemoryAt: function setMemoryAt(addr, value) {
+					if (addr < 0 || addr >= this.memory.length) {
+						throw new Ttk91jsRuntimeException('trying to access outside of program memory (' + addr + ')');
+					}
+
+					this.memory[addr] = value;
+				},
+
 				getRegisters: function getRegisters() {
 					return this.reg;
 				},
@@ -1505,7 +1521,7 @@ var _typeof = typeof Symbol === "function" && typeof Symbol.iterator === "symbol
 				},
 
 				_runWord: function _runWord() {
-					var _global$splitWord3 = global.splitWord(this.memory[this.reg[PC]]),
+					var _global$splitWord3 = global.splitWord(this.getMemoryAt(this.reg[PC])),
 					    _global$splitWord4 = _slicedToArray(_global$splitWord3, 5),
 					    op = _global$splitWord4[0],
 					    rj = _global$splitWord4[1],
@@ -1525,10 +1541,10 @@ var _typeof = typeof Symbol === "function" && typeof Symbol.iterator === "symbol
 							break;
 						case OP.STORE:
 							if (this.settings.triggerMemoryWrite) {
-								this.trigger('memory-write', addr, this.memory[addr], this.reg[rj]);
+								this.trigger('memory-write', addr, this.getMemoryAt(addr), this.reg[rj]);
 							}
 
-							this.memory[addr] = this.reg[rj];
+							this.setMemoryAt(addr, this.reg[rj]);
 
 							break;
 						case OP.LOAD:
@@ -1621,7 +1637,7 @@ var _typeof = typeof Symbol === "function" && typeof Symbol.iterator === "symbol
 						case OP.JLES:
 							break;
 						case OP.JEQU:
-							if (this.SR & BIT_E) this.reg[PC] = this.memory[addr];
+							if (this.SR & BIT_E) this.reg[PC] = this.getMemoryAt(addr);
 
 							break;
 						case OP.JGRE:
@@ -1629,7 +1645,7 @@ var _typeof = typeof Symbol === "function" && typeof Symbol.iterator === "symbol
 						case OP.JNLES:
 							break;
 						case OP.JNEQU:
-							if (!(this.SR & BIT_E)) this.reg[PC] = this.memory[addr];
+							if (!(this.SR & BIT_E)) this.reg[PC] = this.getMemoryAt(addr);
 
 							break;
 						case OP.JNGRE:
