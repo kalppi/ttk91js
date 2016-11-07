@@ -21,10 +21,9 @@ const PC = 8;
 
 const OP = global.OP;
 
-function Ttk91jsRuntimeException(message, line) {
+function Ttk91jsRuntimeException(message) {
 	this.name = 'Ttk91jsRuntimeException';
 	this.message = message;
-	this.line = line;
 }
 
 Ttk91jsRuntimeException.prototype.toString = function() {
