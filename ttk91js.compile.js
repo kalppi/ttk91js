@@ -41,7 +41,9 @@ function getOpArgCount(op) {
 	op = global.OP[op];
 
 	if(op === global.OP.NOP) return 0;
-	else if(op >= global.OP.JUMP && op <= global.OP.JNGRE) {
+	else if(op == global.OP.NOT) {
+		return 1;
+	} else if(op >= global.OP.JUMP && op <= global.OP.JNGRE) {
 		return 1;
 	}
 

@@ -177,6 +177,30 @@ Machine.prototype = {
 			case OP.MUL:
 				this.reg[rj] *= value;
 				break;
+			case OP.MOD:
+				this.reg[rj] = this.reg[rj] % value;
+				break;
+			case OP.AND:
+				this.reg[rj] = this.reg[rj] & value;
+				break;
+			case OP.OR:
+				this.reg[rj] = this.reg[rj] | value;
+				break;
+			case OP.XOR:
+				this.reg[rj] = this.reg[rj] ^ value;
+				break;
+			case OP.SHL:
+				this.reg[rj] = this.reg[rj] << value;
+				break;
+			case OP.SHR:
+				this.reg[rj] = this.reg[rj] >> value;
+				break;
+			case OP.SHRA:
+				this.reg[rj] = this.reg[rj] >>> value;
+				break;
+			case OP.NOT:
+				this.reg[rj] = ~this.reg[rj];
+				break;
 			case OP.SVC:
 				switch(addr) {
 					case SVC.HALT:
