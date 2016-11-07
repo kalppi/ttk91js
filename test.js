@@ -56,7 +56,8 @@ describe('Compile', function() {
 		let exceptions = {
 			opcode: [
 				'x DEC 20',
-				'LAUD R1, =5'
+				'LAUD R1, =5',
+				'S'
 			],
 			register: [
 				'LOAD R9, =5',
@@ -138,12 +139,7 @@ describe('Machine', function() {
 		machine2.load(data2);
 
 		it('Memory layout after 4 steps', function() {
-			//console.log(machine2.getMemory());
-
-
 			machine2.runWord(4);
-
-
 
 			let memory = machine2.getMemory();
 

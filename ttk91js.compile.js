@@ -132,6 +132,10 @@ function prepare(code) {
 		}
 
 		if(OPS.indexOf(parts[0]) == -1) {
+			if(parts.length == 1) {
+				throw new Ttk91jsCompileException('unknown opcode (' + parts[0] +')', l);
+			}
+
 			symbols.push({
 				name: parts[0],
 				addr: instructions.length,
