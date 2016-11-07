@@ -1203,6 +1203,12 @@ var _typeof = typeof Symbol === "function" && typeof Symbol.iterator === "symbol
 					if (d.length > 2) {
 						ri = getRegister(d[3]);
 
+						if (ri !== 0) m = MODE.IMMEDIATE;
+
+						if (op == global.OP.STORE) {
+							m = MODE.IMMEDIATE;
+						}
+
 						if (d[2][0] == '=') {
 							m = MODE.IMMEDIATE;
 
@@ -1232,8 +1238,6 @@ var _typeof = typeof Symbol === "function" && typeof Symbol.iterator === "symbol
 							if (/^[a-z]+$/i.test(d[2])) {
 								addr = getSymbolAddr(d[2]);
 							} else {
-								if (ri !== 0) m = MODE.IMMEDIATE;
-
 								addr = parseInt(d[2]);
 							}
 						}
@@ -1571,7 +1575,7 @@ var _typeof = typeof Symbol === "function" && typeof Symbol.iterator === "symbol
 								this.trigger('memory-write', addr, this.getMemoryAt(addr), this.reg[rj]);
 							}
 
-							this.setMemoryAt(addr, this.reg[rj]);
+							this.setMemoryAt(value, this.reg[rj]);
 
 							break;
 						case OP.LOAD:
