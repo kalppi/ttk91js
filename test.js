@@ -46,7 +46,7 @@ describe('Compile', function() {
 		});
 
 		it('Data', function() {
-			expect(data.data).to.deep.equal([20, 10]);
+			expect(data.data).to.deep.equal([{value: 20, size: 1}, {value: 10, size: 1}]);
 		});
 	});
 

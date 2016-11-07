@@ -69,8 +69,10 @@ Machine.prototype = {
 			this.memory[i] = data.code[i];
 		}
 
-		for(var j = 0; j < data.data.length; j++) {
-			this.memory[i + j] = data.data[j];
+		let pos = 0;
+		for(let j = 0; j < data.data.length; j++) {
+			this.memory[i + pos] = data.data[j].value;
+			pos += data.data[j].size;
 		}
 
 		this.data = data;

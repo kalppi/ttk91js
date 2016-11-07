@@ -106,6 +106,8 @@ function prepare(code) {
 		return false;
 	}
 
+	let memoryPos = 0;
+
 	for(let l = 0; l < lines.length; l++) {
 		var line = lines[l].trim();
 
@@ -133,24 +135,48 @@ function prepare(code) {
 			symbols.push({
 				name: parts[0],
 				addr: instructions.length,
-				type: 'absolute'
+				type: 'absolute',
+				size: 1
 			});
 			
 			i = parts[1].indexOf(' ');
-			parts = [parts[1].substring(0, i), parts[1].substring(i + 1)];
+			if(i != -1) parts = [parts[1].substring(0, i), parts[1].substring(i + 1)];
 		}
 
 		if(parts[0] == 'DC') {
 			let value = parseInt(parts[1]);
 			let name = symbols.pop().name;
+
+			symbols.push({
+				name: name,
+				addr: memoryPos,
+				type: 'relative',
+				size: 1
+			});
+
+			data.push({
+				value: value,
+				size: 1
+			});
+
+			memoryPos += 1;
+		} else if(parts[0] == 'DS') {
+			let size = parseInt(parts[1]);
+			let name = symbols.pop().name;
 			
 			symbols.push({
 				name: name,
-				addr: data.length,
-				type: 'relative'
+				addr: memoryPos,
+				type: 'relative',
+				size: size
 			});
 
-			data.push(value);
+			data.push({
+				value: 0,
+				size: size
+			});
+
+			memoryPos += size;
 		} else {
 			let op = parts.shift();
 
@@ -174,15 +200,6 @@ function prepare(code) {
 			if(getOpArgCount(op) != args.length) {
 				throw new Ttk91jsCompileException('wrong argcount (' + op + ')');
 			}
-
-
-			/*if(parts.length == 3) {
-				if(parts[1][parts[1].length - 1] != ',') {
-					throw new Ttk91jsCompileException('syntax error', l);
-				} else {
-					parts[1] = parts[1].substring(0, parts[1].length - 1);
-				}
-			}*/
 
 			if(args.length == 2) {
 				i = args[1].indexOf('(');
