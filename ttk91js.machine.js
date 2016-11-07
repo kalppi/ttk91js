@@ -159,7 +159,7 @@ Machine.prototype = {
 				break;
 			case OP.STORE:
 				if(this.settings.triggerMemoryWrite) {
-					this.trigger('memory-write', addr, this.getMemoryAt(value), this.reg[rj]);
+					this.trigger('memory-write', value, this.getMemoryAt(value), this.reg[rj]);
 				}
 
 				this.setMemoryAt(value, this.reg[rj]);
