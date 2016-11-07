@@ -56,7 +56,7 @@ Machine.prototype = {
 		else value = this.reg[ri] + addr;
 
 		if(m > 0) {
-			value = this._getValue(--m, ri, this.memory[addr]);
+			value = this._getValue(--m, ri, this.getMemoryAt(addr));
 		}
 
 		return value;
