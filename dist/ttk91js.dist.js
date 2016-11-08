@@ -897,6 +897,8 @@ var _typeof = typeof Symbol === "function" && typeof Symbol.iterator === "symbol
 		'use strict';
 
 		var common = require('./ttk91js.common.js');
+		var CompileException = require('./ttk91js.exceptions.js').Ttk91jsCompileException;
+		var Debugger = require('./ttk91js.debugger.js');
 
 		var OPS = Object.keys(common.OP);
 
@@ -912,16 +914,6 @@ var _typeof = typeof Symbol === "function" && typeof Symbol.iterator === "symbol
 
 		var SP = 6;
 		var FP = 7;
-
-		function Ttk91jsCompileException(message, line) {
-			this.name = 'Ttk91jsCompileException';
-			this.message = message;
-			this.line = line;
-		}
-
-		Ttk91jsCompileException.prototype.toString = function () {
-			return this.name + ': ' + this.message;
-		};
 
 		function makeWord(op, rj, m, ri, addr) {
 			var word = addr;
@@ -974,7 +966,7 @@ var _typeof = typeof Symbol === "function" && typeof Symbol.iterator === "symbol
 		function prepare(code) {
 			var lines = code.split('\n');
 			var instructions = [];
-			var sourceMap = {};
+			var sourceMap = [];
 
 			var symbols = [];
 			var data = [];
@@ -1049,7 +1041,7 @@ var _typeof = typeof Symbol === "function" && typeof Symbol.iterator === "symbol
 
 				if (OPS.indexOf(parts[0]) == -1) {
 					if (parts.length == 1) {
-						throw new Ttk91jsCompileException('unknown opcode (' + parts[0] + ')', l);
+						throw new CompileException('unknown opcode (' + parts[0] + ')', l);
 					}
 
 					symbols.push({
@@ -1118,7 +1110,7 @@ var _typeof = typeof Symbol === "function" && typeof Symbol.iterator === "symbol
 					}
 
 					if (OPS.indexOf(op) == -1) {
-						throw new Ttk91jsCompileException('unknown opcode (' + op + ')', l);
+						throw new CompileException('unknown opcode (' + op + ')', l);
 					}
 
 					if (args.length == 2) {
@@ -1126,7 +1118,7 @@ var _typeof = typeof Symbol === "function" && typeof Symbol.iterator === "symbol
 						if (i != -1) {
 							var j = args[1].indexOf(')', i);
 							if (j == -1) {
-								throw new Ttk91jsCompileException('syntax error', l);
+								throw new CompileException('syntax error', l);
 							} else {
 								args.push(args[1].substring(i + 1, j));
 								args[1] = args[1].substring(0, i);
@@ -1154,23 +1146,23 @@ var _typeof = typeof Symbol === "function" && typeof Symbol.iterator === "symbol
 
 					args.forEach(function (arg) {
 						if (!isValidArgument(arg)) {
-							throw new Ttk91jsCompileException('syntax error (' + line + ')', l);
+							throw new CompileException('syntax error (' + line + ')', l);
 						}
 					});
 
 					args.forEach(function (arg) {
 						if (arg.length == 2 && arg[0] == 'R') {
 							if (/0-9/.test(arg[1]) || parseInt(arg[1]) > 7) {
-								throw new Ttk91jsCompileException('invalid register (' + arg + ')', l);
+								throw new CompileException('invalid register (' + arg + ')', l);
 							}
 						}
 					});
 
 					if (getOpArgCount(op) != args.length - 1) {
-						throw new Ttk91jsCompileException('wrong argcount (' + op + ')', l);
+						throw new CompileException('wrong argcount (' + op + ')', l);
 					}
 
-					sourceMap[instructions.length] = l;
+					sourceMap.push(l);
 
 					instructions.push({
 						line: l,
@@ -1197,13 +1189,13 @@ var _typeof = typeof Symbol === "function" && typeof Symbol.iterator === "symbol
 						var symbol = getSymbol(ins.code[1]);
 
 						if (!symbolExists(symbol)) {
-							throw new Ttk91jsCompileException('unknown symbol (' + symbol + ')', ins.line);
+							throw new CompileException('unknown symbol (' + symbol + ')', ins.line);
 						}
 					} else if (ins.code.length == 4 && isSymbol(ins.code[2])) {
 						var _symbol = getSymbol(ins.code[2]);
 
 						if (!symbolExists(_symbol)) {
-							throw new Ttk91jsCompileException('unknown symbol (' + _symbol + ')', ins.line);
+							throw new CompileException('unknown symbol (' + _symbol + ')', ins.line);
 						}
 					}
 				}
@@ -1348,38 +1340,70 @@ var _typeof = typeof Symbol === "function" && typeof Symbol.iterator === "symbol
 				}
 			}
 
-			return { code: words, symbols: data.symbols, data: data.data, sourceMap: data.sourceMap };
+			return {
+				code: words,
+				data: data.data,
+				debugData: {
+					symbols: Object.freeze(data.symbols),
+					sourceMap: Object.freeze(data.sourceMap)
+				}
+			};
 		};
 
 		module.exports = compile;
-	}, { "./ttk91js.common.js": 6 }], 8: [function (require, module, exports) {
+	}, { "./ttk91js.common.js": 6, "./ttk91js.debugger.js": 8, "./ttk91js.exceptions.js": 9 }], 8: [function (require, module, exports) {
+		var CompileException = require('./ttk91js.exceptions.js').Ttk91jsCompileException;
+		var RuntimeException = require('./ttk91js.exceptions.js').Ttk91jsRuntimeException;
 
-		function Debugger() {
-			this.PC = 0;
-			this.IR = 0;
+		function Debugger(data) {
+			this.PC = -1;
+			this.IR = -1;
+
+			this.symbols = Object.freeze(data.symbols);
+			this.sourceMap = Object.freeze(data.sourceMap);
 		}
 
 		Debugger.prototype = {
 			cycle: function cycle(PC, IR) {
 				this.PC = PC;
 				this.IR = IR;
+			},
+
+			getCurrentLineNumber: function getCurrentLineNumber() {
+				return this.getLineNumber(this.PC);
+			},
+
+			getLineNumber: function getLineNumber(ln) {
+				if (ln instanceof RuntimeException) return this.getLineNumber(this.PC);else if (ln < 0 || ln >= this.sourceMap.length) return null;
+
+				return this.sourceMap[ln];
 			}
 		};
 
 		module.exports = Debugger;
-	}, {}], 9: [function (require, module, exports) {
+	}, { "./ttk91js.exceptions.js": 9 }], 9: [function (require, module, exports) {
 
-		function Ttk91jsRuntimeException(message, line) {
+		function Ttk91jsRuntimeException(message) {
 			this.name = 'Ttk91jsRuntimeException';
 			this.message = message;
-			this.line = line;
 		}
 
 		Ttk91jsRuntimeException.prototype.toString = function () {
 			return this.name + ': ' + this.message;
 		};
 
+		function Ttk91jsCompileException(message, line) {
+			this.name = 'Ttk91jsCompileException';
+			this.message = message;
+			this.line = line;
+		}
+
+		Ttk91jsCompileException.prototype.toString = function () {
+			return this.name + ': ' + this.message;
+		};
+
 		module.exports = {
+			Ttk91jsCompileException: Ttk91jsCompileException,
 			Ttk91jsRuntimeException: Ttk91jsRuntimeException
 		};
 	}, {}], 10: [function (require, module, exports) {
@@ -1482,7 +1506,7 @@ var _typeof = typeof Symbol === "function" && typeof Symbol.iterator === "symbol
 
 			function Machine(settings) {
 				this.settings = settings;
-				this.memory = Object.freeze(new Memory(this, settings.memory));
+				this.memory = Object.freeze(new Memory(settings.memory || 512));
 				this.reg = new Uint32Array(9);
 
 				this.stdout = {
@@ -1491,24 +1515,12 @@ var _typeof = typeof Symbol === "function" && typeof Symbol.iterator === "symbol
 					}
 				};
 
-				this.debugger = new Debugger();
-
 				this.reset();
 			}
 
 			Machine.prototype = {
-				_getValue: function _getValue(m, ri, addr) {
-					var value = 0;
-
-					if (ri === 0) value = addr;else value = this.reg[ri] + addr;
-
-					if (m == 3) {
-						throw new RuntimeException('Invalid memory access mode', this.debugger.PC);
-					}if (m > 0) {
-						value = this._getValue(--m, ri, this.memory.getAt(addr));
-					}
-
-					return value;
+				getDebugger: function getDebugger() {
+					return this.debugger;
 				},
 
 				reset: function reset() {
@@ -1516,7 +1528,7 @@ var _typeof = typeof Symbol === "function" && typeof Symbol.iterator === "symbol
 					this.SR = 0;
 					this.reg.fill(0);
 					this.memory.reset();
-					this.data = null;
+					this.debugger = null;
 				},
 
 				load: function load(data) {
@@ -1530,7 +1542,7 @@ var _typeof = typeof Symbol === "function" && typeof Symbol.iterator === "symbol
 						pos += data.data[j].size;
 					}
 
-					this.data = data;
+					this.debugger = new Debugger(data.debugData);
 				},
 
 				getRegisters: function getRegisters() {
@@ -1574,6 +1586,20 @@ var _typeof = typeof Symbol === "function" && typeof Symbol.iterator === "symbol
 					for (var _i3 = 0; _i3 < count; _i3++) {
 						this._runWord();
 					}
+				},
+
+				_getValue: function _getValue(m, ri, addr) {
+					var value = 0;
+
+					if (ri === 0) value = addr;else value = this.reg[ri] + addr;
+
+					if (m >= 3) {
+						throw new RuntimeException('Invalid memory access mode');
+					} else if (m > 0) {
+						value = this._getValue(--m, ri, this.memory.getAt(addr));
+					}
+
+					return value;
 				},
 
 				_runWord: function _runWord() {
@@ -1708,7 +1734,7 @@ var _typeof = typeof Symbol === "function" && typeof Symbol.iterator === "symbol
 						case OP.JNGRE:
 							break;
 						default:
-							throw new RuntimeException('unknown opcode (' + op + ')', this.debugger.PC);
+							throw new RuntimeException('unknown opcode (' + op + ')');
 					}
 
 					if (this.settings.triggerRegisterWrite) {
@@ -1724,15 +1750,14 @@ var _typeof = typeof Symbol === "function" && typeof Symbol.iterator === "symbol
 	}, { "./ttk91js.common.js": 6, "./ttk91js.debugger.js": 8, "./ttk91js.exceptions.js": 9, "./ttk91js.memory.js": 12, "_process": 2, "microevent": 1 }], 12: [function (require, module, exports) {
 		var Ttk91jsRuntimeException = require('./ttk91js.exceptions.js').Ttk91jsRuntimeException;
 
-		function Memory(machine, size) {
-			this.machine = machine;
+		function Memory(size) {
 			this.memory = new Uint32Array(size);
 		}
 
 		Memory.prototype = {
 			setAt: function setAt(addr, value) {
 				if (addr < 0 || addr >= this.memory.length) {
-					throw new Ttk91jsRuntimeException('trying to access outside of program memory (' + addr + ')', this.machine.debugger.PC);
+					throw new Ttk91jsRuntimeException('trying to access outside of program memory (' + addr + ')');
 				}
 
 				this.memory[addr] = value;
@@ -1740,7 +1765,7 @@ var _typeof = typeof Symbol === "function" && typeof Symbol.iterator === "symbol
 
 			getAt: function getAt(addr) {
 				if (addr < 0 || addr >= this.memory.length) {
-					throw new Ttk91jsRuntimeException('trying to access outside of program memory (' + addr + ')', this.machine.debugger.PC);
+					throw new Ttk91jsRuntimeException('trying to access outside of program memory (' + addr + ')');
 				}
 
 				return this.memory[addr];
