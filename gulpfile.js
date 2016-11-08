@@ -10,7 +10,7 @@ var gulp = require('gulp'),
 
 gulp.task('build-dist', function() {
 	gulp.src([
-		'./ttk91js.js',
+		'./ttk91js/ttk91js.js',
 	])
 	.pipe(through2.obj(function (file, enc, next) {
 		browserify(file.path)
