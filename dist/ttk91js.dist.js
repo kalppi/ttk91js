@@ -823,11 +823,82 @@ var _typeof = typeof Symbol === "function" && typeof Symbol.iterator === "symbol
 			}
 		}).call(this, require('_process'), typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {});
 	}, { "./support/isBuffer": 4, "_process": 2, "inherits": 3 }], 6: [function (require, module, exports) {
+
+		function splitWord(word) {
+			return [(word & 0xff << 24) >> 24, //op
+			(word & 0x7 << 21) >> 21, //rj
+			(word & 0x3 << 19) >> 19, //m
+			(word & 0x7 << 16) >> 16, //ri
+			word & 0xffff];
+		}
+
+		module.exports = {
+			splitWord: splitWord,
+			OP: {
+				NOP: 0,
+				STORE: 1,
+				LOAD: 2,
+				IN: 3,
+				OUT: 4,
+				ADD: 17,
+				SUB: 18,
+				MUL: 19,
+				DIV: 20,
+				MOD: 21,
+				AND: 22,
+				OR: 23,
+				XOR: 24,
+				SHL: 25,
+				SHR: 26,
+				NOT: 27,
+				SHRA: 28,
+				COMP: 31,
+				JUMP: 32,
+				JNEG: 33,
+				JZER: 34,
+				JPOS: 35,
+				JNNEG: 36,
+				JNZER: 37,
+				JNPOS: 38,
+				JLES: 39,
+				JEQU: 40,
+				JGRE: 41,
+				JNLES: 42,
+				JNEQU: 43,
+				JNGRE: 44,
+				CALL: 49,
+				EXIT: 50,
+				PUSH: 51,
+				POP: 52,
+				PUSHR: 53,
+				POPR: 54,
+				SVC: 112
+			},
+			MODE: {
+				IMMEDIATE: 0,
+				DIRECT: 1,
+				INDIRECT: 2
+			},
+			SR_BITS: {
+				G: 1,
+				E: 2,
+				L: 4,
+				OVERFLOW: 8,
+				DIVIDE_BY_ZERO: 16,
+				UNKNOWN_INSTRUCTION: 32,
+				FORBIDDED_MEMORY_ADRESS: 64,
+				DEVICE_INTERRUPT: 128,
+				SVC: 256,
+				PRIVILEGED: 512,
+				INTERRUPTS_DISABLED: 1024
+			}
+		};
+	}, {}], 7: [function (require, module, exports) {
 		'use strict';
 
-		var global = require('./ttk91js.global.js');
+		var common = require('./ttk91js.common.js');
 
-		var OPS = Object.keys(global.OP);
+		var OPS = Object.keys(common.OP);
 
 		var OUTPUT = {
 			CRT: 0
@@ -837,7 +908,7 @@ var _typeof = typeof Symbol === "function" && typeof Symbol.iterator === "symbol
 			HALT: 11
 		};
 
-		var MODE = global.MODE;
+		var MODE = common.MODE;
 
 		var SP = 6;
 		var FP = 7;
@@ -863,11 +934,11 @@ var _typeof = typeof Symbol === "function" && typeof Symbol.iterator === "symbol
 		}
 
 		function getOpArgCount(op) {
-			op = global.OP[op];
+			op = common.OP[op];
 
-			if (op === global.OP.NOP) return 0;else if (op == global.OP.NOT) {
+			if (op === common.OP.NOP) return 0;else if (op == common.OP.NOT) {
 				return 1;
-			} else if (op >= global.OP.JUMP && op <= global.OP.JNGRE) {
+			} else if (op >= common.OP.JUMP && op <= common.OP.JNGRE) {
 				return 1;
 			}
 
@@ -954,8 +1025,7 @@ var _typeof = typeof Symbol === "function" && typeof Symbol.iterator === "symbol
 			var memoryPos = 0;
 
 			var _loop = function _loop(l) {
-				line = lines[l].trim();
-
+				var line = lines[l].trim();
 
 				var i = line.indexOf(';');
 				if (i != -1) {
@@ -984,7 +1054,7 @@ var _typeof = typeof Symbol === "function" && typeof Symbol.iterator === "symbol
 
 					symbols.push({
 						name: parts[0],
-						addr: instructions.length,
+						value: instructions.length,
 						type: 'absolute',
 						size: 1
 					});
@@ -993,30 +1063,40 @@ var _typeof = typeof Symbol === "function" && typeof Symbol.iterator === "symbol
 					if (i != -1) parts = [parts[1].substring(0, i), parts[1].substring(i + 1)];
 				}
 
-				if (parts[0] == 'DC') {
+				if (parts[0] == 'EQU') {
 					var value = parseInt(parts[1]);
 					var name = symbols.pop().name;
 
 					symbols.push({
 						name: name,
-						addr: memoryPos,
+						value: value,
+						type: 'absolute',
+						size: 0
+					});
+				} else if (parts[0] == 'DC') {
+					var _value = parseInt(parts[1]);
+					var _name = symbols.pop().name;
+
+					symbols.push({
+						name: _name,
+						value: memoryPos,
 						type: 'relative',
 						size: 1
 					});
 
 					data.push({
-						value: value,
+						value: _value,
 						size: 1
 					});
 
 					memoryPos += 1;
 				} else if (parts[0] == 'DS') {
 					var size = parseInt(parts[1]);
-					var _name = symbols.pop().name;
+					var _name2 = symbols.pop().name;
 
 					symbols.push({
-						name: _name,
-						addr: memoryPos,
+						name: _name2,
+						value: memoryPos,
 						type: 'relative',
 						size: size
 					});
@@ -1044,8 +1124,7 @@ var _typeof = typeof Symbol === "function" && typeof Symbol.iterator === "symbol
 					if (args.length == 2) {
 						i = args[1].indexOf('(');
 						if (i != -1) {
-							j = args[1].indexOf(')', i);
-
+							var j = args[1].indexOf(')', i);
 							if (j == -1) {
 								throw new Ttk91jsCompileException('syntax error', l);
 							} else {
@@ -1101,9 +1180,6 @@ var _typeof = typeof Symbol === "function" && typeof Symbol.iterator === "symbol
 			};
 
 			for (var l = 0; l < lines.length; l++) {
-				var line;
-				var j;
-
 				var _ret = _loop(l);
 
 				if (_ret === "continue") continue;
@@ -1157,10 +1233,10 @@ var _typeof = typeof Symbol === "function" && typeof Symbol.iterator === "symbol
 		var compile = function compile(code) {
 			var data = prepare(code);
 
-			function getSymbolAddr(symbol) {
+			function getSymbolValue(symbol) {
 				for (var _i = 0; _i < data.symbols.length; _i++) {
 					if (data.symbols[_i].name == symbol) {
-						return data.symbols[_i].addr;
+						return data.symbols[_i].value;
 					}
 				}
 			}
@@ -1173,7 +1249,7 @@ var _typeof = typeof Symbol === "function" && typeof Symbol.iterator === "symbol
 
 			for (var _i2 = 0; _i2 < data.symbols.length; _i2++) {
 				if (data.symbols[_i2].type == 'relative') {
-					data.symbols[_i2].addr += data.code.length;
+					data.symbols[_i2].value += data.code.length;
 				}
 
 				delete data.symbols[_i2].type;
@@ -1188,7 +1264,7 @@ var _typeof = typeof Symbol === "function" && typeof Symbol.iterator === "symbol
 					var ins = _step3.value;
 
 					var d = ins.code;
-					var op = global.OP[d[0]];
+					var op = common.OP[d[0]];
 
 					var rj = 0;
 					var ri = 0;
@@ -1200,7 +1276,7 @@ var _typeof = typeof Symbol === "function" && typeof Symbol.iterator === "symbol
 						if (isRegister(d[1])) {
 							rj = getRegister(d[1]);
 						} else {
-							rj = getSymbolAddr(d[1]);
+							rj = getSymbolValue(d[1]);
 						}
 					}
 
@@ -1209,7 +1285,7 @@ var _typeof = typeof Symbol === "function" && typeof Symbol.iterator === "symbol
 
 						if (ri !== 0) m = MODE.IMMEDIATE;
 
-						if (op == global.OP.STORE) {
+						if (op == common.OP.STORE) {
 							m = MODE.IMMEDIATE;
 						}
 
@@ -1229,7 +1305,7 @@ var _typeof = typeof Symbol === "function" && typeof Symbol.iterator === "symbol
 										addr = SVC.HALT;
 										break;
 									default:
-										addr = getSymbolAddr(s);
+										addr = getSymbolValue(s);
 								}
 							}
 						} else if (d[2][0] == '@') {
@@ -1237,17 +1313,17 @@ var _typeof = typeof Symbol === "function" && typeof Symbol.iterator === "symbol
 
 							var _s = d[2].substring(1);
 
-							addr = getSymbolAddr(_s);
+							addr = getSymbolValue(_s);
 						} else {
 							if (/^[a-z]+$/i.test(d[2])) {
-								addr = getSymbolAddr(d[2]);
+								addr = getSymbolValue(d[2]);
 							} else {
 								addr = parseInt(d[2]);
 							}
 						}
 					}
 
-					if (op >= global.OP.JUMP && op <= global.OP.JNGRE) {
+					if (op >= common.OP.JUMP && op <= common.OP.JNGRE) {
 						addr = rj;
 						rj = 0;
 						m = 0;
@@ -1276,88 +1352,60 @@ var _typeof = typeof Symbol === "function" && typeof Symbol.iterator === "symbol
 		};
 
 		module.exports = compile;
-	}, { "./ttk91js.global.js": 7 }], 7: [function (require, module, exports) {
+	}, { "./ttk91js.common.js": 6 }], 8: [function (require, module, exports) {
 
-		function splitWord(word) {
-			return [(word & 0xff << 24) >> 24, //op
-			(word & 0x7 << 21) >> 21, //rj
-			(word & 0x3 << 19) >> 19, //m
-			(word & 0x7 << 16) >> 16, //ri
-			word & 0xffff];
+		function Debugger() {
+			this.PC = 0;
+			this.IR = 0;
 		}
 
-		module.exports = {
-			splitWord: splitWord,
-			OP: {
-				NOP: 0,
-				STORE: 1,
-				LOAD: 2,
-				IN: 3,
-				OUT: 4,
-				ADD: 17,
-				SUB: 18,
-				MUL: 19,
-				DIV: 20,
-				MOD: 21,
-				AND: 22,
-				OR: 23,
-				XOR: 24,
-				SHL: 25,
-				SHR: 26,
-				NOT: 27,
-				SHRA: 28,
-				COMP: 31,
-				JUMP: 32,
-				JNEG: 33,
-				JZER: 34,
-				JPOS: 35,
-				JNNEG: 36,
-				JNZER: 37,
-				JNPOS: 38,
-				JLES: 39,
-				JEQU: 40,
-				JGRE: 41,
-				JNLES: 42,
-				JNEQU: 43,
-				JNGRE: 44,
-				CALL: 49,
-				EXIT: 50,
-				PUSH: 51,
-				POP: 52,
-				PUSHR: 53,
-				POPR: 54,
-				SVC: 112
-			},
-			MODE: {
-				IMMEDIATE: 0,
-				DIRECT: 1,
-				INDIRECT: 2
+		Debugger.prototype = {
+			cycle: function cycle(PC, IR) {
+				this.PC = PC;
+				this.IR = IR;
 			}
 		};
-	}, {}], 8: [function (require, module, exports) {
+
+		module.exports = Debugger;
+	}, {}], 9: [function (require, module, exports) {
+
+		function Ttk91jsRuntimeException(message, line) {
+			this.name = 'Ttk91jsRuntimeException';
+			this.message = message;
+			this.line = line;
+		}
+
+		Ttk91jsRuntimeException.prototype.toString = function () {
+			return this.name + ': ' + this.message;
+		};
+
+		module.exports = {
+			Ttk91jsRuntimeException: Ttk91jsRuntimeException
+		};
+	}, {}], 10: [function (require, module, exports) {
 		'use strict';
 
 		var util = require('util');
 
-		var global = require('./ttk91js.global.js');
+		var common = require('./ttk91js.common.js');
 		var compile = require('./ttk91js.compile.js');
 		var Machine = require('./ttk91js.machine.js');
 
-		var OPS = Object.keys(global.OP);
+		var OPS = Object.keys(common.OP);
 		var OPSV = {};
 
-		for (var op in global.OP) {
-			OPSV[global.OP[op]] = op;
+		for (var op in common.OP) {
+			OPSV[common.OP[op]] = op;
 		}
 
 		function wordToString(word) {
-			var _global$splitWord = global.splitWord(word),
-			    _global$splitWord2 = _slicedToArray(_global$splitWord, 5),
-			    op = _global$splitWord2[0],
-			    rj = _global$splitWord2[1],
-			    m = _global$splitWord2[2],
-			    ri = _global$splitWord2[3],
-			    addr = _global$splitWord2[4];
+			var _common$splitWord = common.splitWord(word),
+			    _common$splitWord2 = _slicedToArray(_common$splitWord, 5),
+			    op = _common$splitWord2[0],
+			    rj = _common$splitWord2[1],
+			    m = _common$splitWord2[2],
+			    ri = _common$splitWord2[3],
+			    addr = _common$splitWord2[4];
 
 			if (op === 0) {
 				return 'NOP';
@@ -1365,15 +1413,15 @@ var _typeof = typeof Symbol === "function" && typeof Symbol.iterator === "symbol
 
 			var ms = '';
 			switch (m) {
-				case global.MODE.IMMEDIATE:
+				case common.MODE.IMMEDIATE:
 					ms = '=';
 					break;
-				case global.MODE.INDIRECT:
+				case common.MODE.INDIRECT:
 					ms = '@';
 					break;
 			}
 
-			if (op >= global.OP.JUMP && op <= global.OP.JNGRE) {
+			if (op >= common.OP.JUMP && op <= common.OP.JNGRE) {
 				return util.format('%s %d', OPSV[op], addr);
 			} else {
 				var rjs = 'R' + rj;
@@ -1407,12 +1455,15 @@ var _typeof = typeof Symbol === "function" && typeof Symbol.iterator === "symbol
 		} else {
 			window.ttk91js = ttk91js;
 		}
-	}, { "./ttk91js.compile.js": 6, "./ttk91js.global.js": 7, "./ttk91js.machine.js": 9, "util": 5 }], 9: [function (require, module, exports) {
+	}, { "./ttk91js.common.js": 6, "./ttk91js.compile.js": 7, "./ttk91js.machine.js": 11, "util": 5 }], 11: [function (require, module, exports) {
 		(function (process) {
 			'use strict';
 
 			var MicroEvent = require('microevent');
-			var global = require('./ttk91js.global.js');
+			var common = require('./ttk91js.common.js');
+			var RuntimeException = require('./ttk91js.exceptions.js').Ttk91jsRuntimeException;
+			var Memory = require('./ttk91js.memory.js');
+			var Debugger = require('./ttk91js.debugger.js');
 
 			var OUTPUT = {
 				CRT: 0
@@ -1422,30 +1473,16 @@ var _typeof = typeof Symbol === "function" && typeof Symbol.iterator === "symbol
 				HALT: 11
 			};
 
-			var BIT_L = 4;
-			var BIT_E = 2;
-			var BIT_G = 1;
+			var OP = common.OP;
+			var SR_BITS = common.SR_BITS;
 
 			var SP = 6;
 			var FP = 7;
 			var PC = 8;
 
-			var OP = global.OP;
-
-			function Ttk91jsRuntimeException(message, line) {
-				this.name = 'Ttk91jsRuntimeException';
-				this.message = message;
-				this.line = line;
-			}
-
-			Ttk91jsRuntimeException.prototype.toString = function () {
-				return this.name + ': ' + this.message;
-			};
-
 			function Machine(settings) {
 				this.settings = settings;
-
-				this.memory = new Uint32Array(settings.memory);
+				this.memory = new Memory(this, settings.memory);
 				this.reg = new Uint32Array(9);
 
 				this.stdout = {
@@ -1454,8 +1491,7 @@ var _typeof = typeof Symbol === "function" && typeof Symbol.iterator === "symbol
 					}
 				};
 
-				this.oldPC = 0;
-				this.data = null;
+				this.debugger = new Debugger();
 
 				this.reset();
 			}
@@ -1466,42 +1502,35 @@ var _typeof = typeof Symbol === "function" && typeof Symbol.iterator === "symbol
 
 					if (ri === 0) value = addr;else value = this.reg[ri] + addr;
 
-					if (m > 0) {
-						value = this._getValue(--m, ri, this.getMemoryAt(addr));
+					if (m == 3) {
+						throw new RuntimeException('Invalid memory access mode', this.debugger.PC);
+					}if (m > 0) {
+						value = this._getValue(--m, ri, this.memory.getAt(addr));
 					}
 
 					return value;
 				},
 
+				reset: function reset() {
+					this.ok = true;
+					this.SR = 0;
+					this.reg.fill(0);
+					this.memory.reset();
+					this.data = null;
+				},
+
 				load: function load(data) {
-					var i = 0;
-					for (; i < data.code.length; i++) {
-						this.memory[i] = data.code[i];
+					for (var i = 0; i < data.code.length; i++) {
+						this.memory.setAt(i, data.code[i]);
 					}
 
 					var pos = 0;
 					for (var j = 0; j < data.data.length; j++) {
-						this.memory[i + pos] = data.data[j].value;
+						this.memory.setAt(i + pos, data.data[j].value);
 						pos += data.data[j].size;
 					}
 
 					this.data = data;
-				},
-
-				getMemoryAt: function getMemoryAt(addr) {
-					if (addr < 0 || addr >= this.memory.length) {
-						throw new Ttk91jsRuntimeException('trying to access outside of program memory (' + addr + ')', this.oldPC);
-					}
-
-					return this.memory[addr];
-				},
-
-				setMemoryAt: function setMemoryAt(addr, value) {
-					if (addr < 0 || addr >= this.memory.length) {
-						throw new Ttk91jsRuntimeException('trying to access outside of program memory (' + addr + ')', this.oldPC);
-					}
-
-					this.memory[addr] = value;
 				},
 
 				getRegisters: function getRegisters() {
@@ -1520,15 +1549,6 @@ var _typeof = typeof Symbol === "function" && typeof Symbol.iterator === "symbol
 					this.stdout = out;
 				},
 
-				reset: function reset() {
-					this.ok = true;
-					this.SR = 0;
-					this.reg.fill(0);
-					this.memory.fill(0);
-					this.data = null;
-					this.oldPC = 0;
-				},
-
 				run: function run(max) {
 					max = max || -1;
 
@@ -1545,27 +1565,29 @@ var _typeof = typeof Symbol === "function" && typeof Symbol.iterator === "symbol
 				},
 
 				isRunning: function isRunning() {
-					return this.ok && this.reg[PC] < this.memory.length;
+					return this.ok && this.reg[PC] < this.memory.size();
 				},
 
 				runWord: function runWord(count) {
 					count = count || 1;
 
-					for (var i = 0; i < count; i++) {
+					for (var _i3 = 0; _i3 < count; _i3++) {
 						this._runWord();
 					}
 				},
 
 				_runWord: function _runWord() {
-					this.oldPC = this.reg[PC];
+					var IR = this.memory.getAt(this.reg[PC]);
 
-					var _global$splitWord3 = global.splitWord(this.getMemoryAt(this.reg[PC])),
-					    _global$splitWord4 = _slicedToArray(_global$splitWord3, 5),
-					    op = _global$splitWord4[0],
-					    rj = _global$splitWord4[1],
-					    m = _global$splitWord4[2],
-					    ri = _global$splitWord4[3],
-					    addr = _global$splitWord4[4];
+					this.debugger.cycle(this.reg[PC], IR);
+
+					var _common$splitWord3 = common.splitWord(IR),
+					    _common$splitWord4 = _slicedToArray(_common$splitWord3, 5),
+					    op = _common$splitWord4[0],
+					    rj = _common$splitWord4[1],
+					    m = _common$splitWord4[2],
+					    ri = _common$splitWord4[3],
+					    addr = _common$splitWord4[4];
 
 					var value = this._getValue(m, ri, addr);
 
@@ -1576,10 +1598,10 @@ var _typeof = typeof Symbol === "function" && typeof Symbol.iterator === "symbol
 							break;
 						case OP.STORE:
 							if (this.settings.triggerMemoryWrite) {
-								this.trigger('memory-write', value, this.getMemoryAt(value), this.reg[rj]);
+								this.trigger('memory-write', value, this.memory.getAt(value), this.reg[rj]);
 							}
 
-							this.setMemoryAt(value, this.reg[rj]);
+							this.memory.setAt(value, this.reg[rj]);
 
 							break;
 						case OP.LOAD:
@@ -1648,9 +1670,9 @@ var _typeof = typeof Symbol === "function" && typeof Symbol.iterator === "symbol
 						case OP.COMP:
 							this.SR = 0;
 
-							if (this.reg[rj] == value) this.SR |= BIT_E;
-							if (this.reg[rj] > value) this.SR |= BIT_G;
-							if (this.reg[rj] < value) this.SR |= BIT_L;
+							if (this.reg[rj] == value) this.SR |= SR_BITS.E;
+							if (this.reg[rj] > value) this.SR |= SR_BITS.G;
+							if (this.reg[rj] < value) this.SR |= SR_BITS.L;
 
 							break;
 						case OP.JUMP:
@@ -1672,7 +1694,7 @@ var _typeof = typeof Symbol === "function" && typeof Symbol.iterator === "symbol
 						case OP.JLES:
 							break;
 						case OP.JEQU:
-							if (this.SR & BIT_E) this.reg[PC] = this.getMemoryAt(addr);
+							if (this.SR & SR_BITS.E) this.reg[PC] = this.memory.getAt(addr);
 
 							break;
 						case OP.JGRE:
@@ -1680,17 +1702,17 @@ var _typeof = typeof Symbol === "function" && typeof Symbol.iterator === "symbol
 						case OP.JNLES:
 							break;
 						case OP.JNEQU:
-							if (!(this.SR & BIT_E)) this.reg[PC] = this.getMemoryAt(addr);
+							if (!(this.SR & SR_BITS.E)) this.reg[PC] = this.memory.getAt(addr);
 
 							break;
 						case OP.JNGRE:
 							break;
 						default:
-							throw new Ttk91jsRuntimeException('unknown opcode (' + op + ')', this.oldPC);
+							throw new RuntimeException('unknown opcode (' + op + ')', this.debugger.PC);
 					}
 
 					if (this.settings.triggerRegisterWrite) {
-						this.trigger('register-write', PC, this.oldPC, this.reg[PC]);
+						this.trigger('register-write', PC, this.debugger.PC, this.reg[PC]);
 					}
 				}
 			};
@@ -1699,4 +1721,43 @@ var _typeof = typeof Symbol === "function" && typeof Symbol.iterator === "symbol
 
 			module.exports = Machine;
 		}).call(this, require('_process'));
-	}, { "./ttk91js.global.js": 7, "_process": 2, "microevent": 1 }] }, {}, [8]);
+	}, { "./ttk91js.common.js": 6, "./ttk91js.debugger.js": 8, "./ttk91js.exceptions.js": 9, "./ttk91js.memory.js": 12, "_process": 2, "microevent": 1 }], 12: [function (require, module, exports) {
+		var Ttk91jsRuntimeException = require('./ttk91js.exceptions.js').Ttk91jsRuntimeException;
+
+		function Memory(machine, size) {
+			this.machine = machine;
+			this.memory = new Uint32Array(size);
+		}
+
+		Memory.prototype = {
+			setAt: function setAt(addr, value) {
+				if (addr < 0 || addr >= this.memory.length) {
+					throw new Ttk91jsRuntimeException('trying to access outside of program memory (' + addr + ')', this.machine.debugger.PC);
+				}
+
+				this.memory[addr] = value;
+			},
+
+			getAt: function getAt(addr) {
+				if (addr < 0 || addr >= this.memory.length) {
+					throw new Ttk91jsRuntimeException('trying to access outside of program memory (' + addr + ')', this.machine.debugger.PC);
+				}
+
+				return this.memory[addr];
+			},
+
+			getAll: function getAll() {
+				return this.memory;
+			},
+
+			reset: function reset() {
+				this.memory.fill(0);
+			},
+
+			size: function size() {
+				return this.memory.length;
+			}
+		};
+
+		module.exports = Memory;
+	}, { "./ttk91js.exceptions.js": 9 }] }, {}, [10]);
