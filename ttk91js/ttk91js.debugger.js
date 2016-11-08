@@ -2,8 +2,8 @@ const CompileException = require('./ttk91js.exceptions.js').Ttk91jsCompileExcept
 const RuntimeException = require('./ttk91js.exceptions.js').Ttk91jsRuntimeException;
 
 function Debugger(data) {
-	this.PC = -1;
-	this.IR = -1;
+	this.PC = 0;
+	this.IR = 0;
 
 	this.symbols = Object.freeze(data.symbols);
 	this.sourceMap = Object.freeze(data.sourceMap);
