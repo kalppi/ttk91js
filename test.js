@@ -8,11 +8,10 @@ var ttk91js = require('./ttk91js/ttk91js.js');
 var expect = chai.expect;
 
 /*
-const testProgram = ttk91js.compile('LOAD R1,');
+const testProgram = ttk91js.compile('JUMP aaa\naaa LOAD R1,=1');
 const testMachine = ttk91js.createMachine({memory: 10});
 testMachine.load(testProgram);
-return;
-*/
+return;*/
 
 describe('Compile', function() {
 	describe('Misc', () => {
@@ -172,6 +171,18 @@ describe('Machine', function() {
 			let memory = machine2.getMemory();
 
 			expect(memory.getAt(4)).to.equal(60);
+		});
+	});
+
+	describe('Jumps', () => {
+		it('JUMP', function() {
+			let data = ttk91js.compile('JUMP aaa\nLOAD R1,=5\naaa LOAD R1,=6');
+			let machine = ttk91js.createMachine({memory: memoryLimit});
+			machine.load(data);
+			machine.run();
+			let reg = machine.getRegisters();
+
+			expect(reg[1]).to.be.equal(6);
 		});
 	});
 

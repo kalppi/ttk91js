@@ -14,7 +14,7 @@ gulp.task('build-dist', function() {
 	])
 	.pipe(through2.obj(function (file, enc, next) {
 		browserify(file.path)
-			.transform('stripify')
+			//.transform('stripify')
 			.bundle(function(err, res){
 				file.contents = res;
 

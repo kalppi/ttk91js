@@ -41,7 +41,7 @@ function getOpArgCount(op) {
 		return 1;
 	}
 
-	return 2;
+	return 3;
 }
 
 function isRegister(reg) {
@@ -258,7 +258,7 @@ function prepare(code) {
 					}
 				});
 
-				if(getOpArgCount(op) != args.length - 1) {
+				if(getOpArgCount(op) != args.length) {
 					throw new CompileException('wrong argcount (' + op + ')', l);
 				}
 

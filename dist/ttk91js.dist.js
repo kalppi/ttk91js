@@ -1382,6 +1382,12 @@ var _typeof = typeof Symbol === "function" && typeof Symbol.iterator === "symbol
 			cycle: function cycle(PC, IR) {
 				this.PC = PC;
 				this.IR = IR;
+
+				console.log("#" + PC);
+			},
+
+			cycleEnd: function cycleEnd(PC) {
+				this.PC = PC;
 			},
 
 			getCurrentLineNumber: function getCurrentLineNumber() {
@@ -1473,10 +1479,10 @@ var _typeof = typeof Symbol === "function" && typeof Symbol.iterator === "symbol
 		var debug = {
 			word: function word(_word) {
 				var s = ('0'.repeat(32) + (_word >>> 0).toString(2)).slice(-32);
-				;
+				console.log(s.substr(0, 8) + ' ' + s.substr(8, 3) + ' ' + s.substr(11, 2) + ' ' + s.substr(13, 3) + ' ' + s.substr(16));
 			},
 			bin: function bin(dec) {
-				;
+				console.log(('0'.repeat(32) + (dec >>> 0).toString(2)).slice(-32));
 			}
 		};
 
@@ -1751,6 +1757,8 @@ var _typeof = typeof Symbol === "function" && typeof Symbol.iterator === "symbol
 						default:
 							throw new RuntimeException('unknown opcode (' + op + ')');
 					}
+
+					this.debugger.cycleEnd(this.reg[PC]);
 
 					if (this.settings.triggerRegisterWrite) {
 						this.trigger('register-write', PC, this.debugger.PC, this.reg[PC]);

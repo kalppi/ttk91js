@@ -15,6 +15,10 @@ Debugger.prototype = {
 		this.IR = IR;
 	},
 
+	cycleEnd: function(PC) {
+		this.PC = PC;
+	},
+
 	getCurrentLineNumber: function() {
 		return this.getLineNumber(this.PC);
 	},

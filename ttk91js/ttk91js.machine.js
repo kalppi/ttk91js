@@ -248,6 +248,8 @@ Machine.prototype = {
 				throw new RuntimeException('unknown opcode (' + op + ')');
 		}
 
+		this.debugger.cycleEnd(this.reg[PC]);
+
 		if(this.settings.triggerRegisterWrite) {
 			this.trigger('register-write', PC, this.debugger.PC, this.reg[PC]);
 		}
