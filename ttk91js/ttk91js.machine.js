@@ -3,6 +3,7 @@
 const MicroEvent = require('microevent');
 const common = require('./ttk91js.common.js');
 const RuntimeException = require('./ttk91js.exceptions.js').Ttk91jsRuntimeException;
+const Registers = require('./ttk91js.registers.js');
 const Memory = require('./ttk91js.memory.js');
 const Debugger = require('./ttk91js.debugger.js');
 
@@ -23,8 +24,8 @@ const PC = 8;
 
 function Machine(settings) {
 	this.settings = settings;
-	this.memory = Object.freeze(new Memory(settings.memory || 512));
-	this.reg = new Uint32Array(9);
+	this.memory = Object.freeze(new Memory(this, settings.memory || 512));
+	this.registers = new Registers(this);
 
 	this.stdout = {
 		write: function(out) {
@@ -43,7 +44,7 @@ Machine.prototype = {
 	reset: function() {
 		this.ok = true;
 		this.SR = 0;
-		this.reg.fill(0);
+		this.registers.reset();
 		this.memory.reset();
 		this.debugger = null;
 	},
@@ -63,7 +64,7 @@ Machine.prototype = {
 	},
 
 	getRegisters: function() {
-		return this.reg;
+		return this.registers;
 	},
 
 	getMemory: function() {
@@ -94,7 +95,7 @@ Machine.prototype = {
 	},
 
 	isRunning: function() {
-		return this.ok && this.reg[PC] < this.memory.size();
+		return this.ok && this.registers.get(PC) < this.memory.size();
 	},
 
 	runWord: function(count) {
@@ -109,7 +110,7 @@ Machine.prototype = {
 		let value = 0;
 
 		if(ri === 0) value = addr;
-		else value = this.reg[ri] + addr;
+		else value = this.registers.get(ri) + addr;
 
 		if(m >= 3) {
 			throw new RuntimeException('Invalid memory access mode');
@@ -121,38 +122,31 @@ Machine.prototype = {
 	},
 
 	_runWord: function() {
-		const IR = this.memory.getAt(this.reg[PC]);
+		const IR = this.memory.getAt(this.registers.get(PC));
 
-		this.debugger.cycle(this.reg[PC], IR);
+		this.debugger.cycle(this.registers.get(PC), IR);
 		
 		const [op, rj, m, ri, addr] = common.splitWord(IR);
 		const TR = this._getValue(m, ri, addr);
 
-		this.reg[PC]++;
+		this.registers.add(PC, 1);
 
 		switch(op) {
 			case OP.NOP:
 				break;
 			case OP.STORE:
-				if(this.settings.triggerMemoryWrite) {
-					this.trigger('memory-write', TR, this.memory.getAt(TR), this.reg[rj]);
-				}
-
-				this.memory.setAt(TR, this.reg[rj]);
+				this.memory.setAt(TR, this.registers.get(rj));
 
 				break;
 			case OP.LOAD:
-				if(this.settings.triggerRegisterWrite) {
-					this.trigger('register-write', rj, this.reg[rj], TR);
-				}
 
-				this.reg[rj] = TR;				
+				this.registers.set(rj, TR);
 
 				break;
 			case OP.OUT:
 				switch(addr) {
 					case OUTPUT.CRT:
-						this.stdout.write(this.reg[rj]);
+						this.stdout.write(this.registers.get(rj));
 
 						break;
 				}
@@ -160,40 +154,40 @@ Machine.prototype = {
 				break;
 
 			case OP.ADD:
-				this.reg[rj] += TR;
+				this.registers.add(rj, TR);
 				break;
 			case OP.SUB:
-				this.reg[rj] -= TR;
+				this.registers.add(rj, -TR);
 				break;
 			case OP.DIV:
-				this.reg[rj] = Math.floor(this.reg[rj] / TR);
+				this.registers.set(rj, Math.floor(this.registers.get(rj) / TR));
 				break;
 			case OP.MUL:
-				this.reg[rj] *= TR;
+				this.registers.set(rj, this.registers.get(rj) * TR);
 				break;
 			case OP.MOD:
-				this.reg[rj] = this.reg[rj] % TR;
+				this.registers.set(rj, this.registers.get(rj) % TR);
 				break;
 			case OP.AND:
-				this.reg[rj] = this.reg[rj] & TR;
+				this.registers.set(rj, this.registers.get(rj) & TR);
 				break;
 			case OP.OR:
-				this.reg[rj] = this.reg[rj] | TR;
+				this.registers.set(rj, this.registers.get(rj) | TR);
 				break;
 			case OP.XOR:
-				this.reg[rj] = this.reg[rj] ^ TR;
+				this.registers.set(rj, this.registers.get(rj) ^ TR);
 				break;
 			case OP.SHL:
-				this.reg[rj] = this.reg[rj] << TR;
+				this.registers.set(rj, this.registers.get(rj) << TR);
 				break;
 			case OP.SHR:
-				this.reg[rj] = this.reg[rj] >> TR;
+				this.registers.set(rj, this.registers.get(rj) >> TR);
 				break;
 			case OP.SHRA:
-				this.reg[rj] = this.reg[rj] >>> TR;
+				this.registers.set(rj, this.registers.get(rj) >>> TR);
 				break;
 			case OP.NOT:
-				this.reg[rj] = ~this.reg[rj];
+				this.registers.set(rj, ~this.registers.get(rj));
 				break;
 			case OP.SVC:
 				switch(addr) {
@@ -207,13 +201,15 @@ Machine.prototype = {
 			case OP.COMP:
 				this.SR = 0;
 
-				if(this.reg[rj] == TR) this.SR |= SR_BITS.E;
-				if(this.reg[rj] > TR) this.SR |= SR_BITS.G;
-				if(this.reg[rj] < TR) this.SR |= SR_BITS.L;
+				let v = this.registers.get(rj);
+
+				if(v == TR) this.SR |= SR_BITS.E;
+				if(v > TR) this.SR |= SR_BITS.G;
+				if(v < TR) this.SR |= SR_BITS.L;
 
 				break;
 			case OP.JUMP:
-				this.reg[PC] = addr;
+				this.registers.set(PC, addr);
 
 				break;
 			case OP.JNEG:
@@ -231,7 +227,7 @@ Machine.prototype = {
 			case OP.JLES:
 				break;
 			case OP.JEQU:
-				if(this.SR & SR_BITS.E) this.reg[PC] = this.memory.getAt(addr);
+				if(this.SR & SR_BITS.E) this.registers.set(PC, this.memory.getAt(addr));
 			
 				break;
 			case OP.JGRE:
@@ -239,7 +235,7 @@ Machine.prototype = {
 			case OP.JNLES:
 				break;
 			case OP.JNEQU:
-				if(!(this.SR & SR_BITS.E)) this.reg[PC] = this.memory.getAt(addr);
+				if(!(this.SR & SR_BITS.E)) this.registers.set(PC, this.memory.getAt(addr));
 
 				break;
 			case OP.JNGRE:
@@ -248,11 +244,7 @@ Machine.prototype = {
 				throw new RuntimeException('unknown opcode (' + op + ')');
 		}
 
-		this.debugger.cycleEnd(this.reg[PC]);
-
-		if(this.settings.triggerRegisterWrite) {
-			this.trigger('register-write', PC, this.debugger.PC, this.reg[PC]);
-		}
+		this.debugger.cycleEnd(this.registers.get(PC));
 	}
 };
 

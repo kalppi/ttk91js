@@ -7,10 +7,11 @@ var ttk91js = require('./ttk91js/ttk91js.js');
 
 var expect = chai.expect;
 
-/*
-const testProgram = ttk91js.compile('JUMP aaa\naaa LOAD R1,=1');
+
+/*const testProgram = ttk91js.compile('LOAD R3, =2');
 const testMachine = ttk91js.createMachine({memory: 10});
 testMachine.load(testProgram);
+testMachine.run();
 return;*/
 
 describe('Compile', function() {
@@ -182,7 +183,7 @@ describe('Machine', function() {
 			machine.run();
 			let reg = machine.getRegisters();
 
-			expect(reg[1]).to.be.equal(6);
+			expect(reg.get(1)).to.be.equal(6);
 		});
 	});
 
@@ -246,6 +247,8 @@ describe('Machine', function() {
 			machine.load(data);
 
 			machine.bind('register-write', (addr, oldValue, newValue) => {
+				if(addr == 8) return;
+				
 				expect(oldValue).to.be.equal(0);
 				expect(newValue).to.be.equal(2);
 				expect(addr).to.be.equal(3);
