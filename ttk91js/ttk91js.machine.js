@@ -1,10 +1,10 @@
 'use strict';
 
-var MicroEvent = require('microevent');
-var global = require('./ttk91js.global.js');
-var Ttk91jsRuntimeException = require('./ttk91js.exceptions.js').Ttk91jsRuntimeException;
-var Memory = require('./ttk91js.memory.js');
-var Debugger = require('./ttk91js.debugger.js');
+const MicroEvent = require('microevent');
+const common = require('./ttk91js.common.js');
+const RuntimeException = require('./ttk91js.exceptions.js').Ttk91jsRuntimeException;
+const Memory = require('./ttk91js.memory.js');
+const Debugger = require('./ttk91js.debugger.js');
 
 const OUTPUT = {
 	CRT: 0
@@ -14,8 +14,8 @@ const SVC = {
 	HALT: 11
 };
 
-const OP = global.OP;
-const SR_BITS = global.SR_BITS;
+const OP = common.OP;
+const SR_BITS = common.SR_BITS;
 
 const SP = 6;
 const FP = 7;
@@ -39,13 +39,13 @@ function Machine(settings) {
 
 Machine.prototype = {
 	_getValue: function(m, ri, addr) {
-		var value = 0;
+		let value = 0;
 
 		if(ri === 0) value = addr;
 		else value = this.reg[ri] + addr;
 
 		if(m == 3) {
-			throw new Ttk91jsRuntimeException('Invalid memory access mode', this.debugger.PC);
+			throw new RuntimeException('Invalid memory access mode', this.debugger.PC);
 		} if(m > 0) {
 			value = this._getValue(--m, ri, this.memory.getAt(addr));
 		}
@@ -62,8 +62,7 @@ Machine.prototype = {
 	},
 
 	load: function(data) {
-		var i = 0;
-		for(; i < data.code.length; i++) {
+		for(var i = 0; i < data.code.length; i++) {
 			this.memory.setAt(i, data.code[i]);
 		}
 
@@ -95,7 +94,7 @@ Machine.prototype = {
 	run: function(max) {
 		max = max || -1;
 
-		var loop = 0;
+		let loop = 0;
 
 		while(this.isRunning()) {
 			this.runWord();
@@ -114,7 +113,7 @@ Machine.prototype = {
 	runWord: function(count) {
 		count = count || 1;
 
-		for(var i = 0; i < count; i++) {
+		for(let i = 0; i < count; i++) {
 			this._runWord();
 		}
 	},
@@ -124,8 +123,8 @@ Machine.prototype = {
 
 		this.debugger.cycle(this.reg[PC], IR);
 		
-		var [op, rj, m, ri, addr] = global.splitWord(IR);
-		var value = this._getValue(m, ri, addr);
+		const [op, rj, m, ri, addr] = common.splitWord(IR);
+		const value = this._getValue(m, ri, addr);
 
 		this.reg[PC]++;
 
@@ -244,7 +243,7 @@ Machine.prototype = {
 			case OP.JNGRE:
 				break;
 			default:
-				throw new Ttk91jsRuntimeException('unknown opcode (' + op + ')', this.debugger.PC);
+				throw new RuntimeException('unknown opcode (' + op + ')', this.debugger.PC);
 		}
 
 		if(this.settings.triggerRegisterWrite) {

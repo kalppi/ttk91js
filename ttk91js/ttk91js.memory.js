@@ -1,4 +1,4 @@
-var Ttk91jsRuntimeException = require('./ttk91js.exceptions.js').Ttk91jsRuntimeException;
+const Ttk91jsRuntimeException = require('./ttk91js.exceptions.js').Ttk91jsRuntimeException;
 
 function Memory(machine, size) {
 	this.machine = machine;

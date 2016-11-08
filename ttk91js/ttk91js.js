@@ -1,37 +1,37 @@
 'use strict';
 
-var util = require('util');
+const util = require('util');
 
-var global = require('./ttk91js.global.js');
-var compile = require('./ttk91js.compile.js');
-var Machine = require('./ttk91js.machine.js');
+const common = require('./ttk91js.common.js');
+const compile = require('./ttk91js.compile.js');
+const Machine = require('./ttk91js.machine.js');
 
-var OPS = Object.keys(global.OP);
-var OPSV = {};
+const OPS = Object.keys(common.OP);
+const OPSV = {};
 
-for(let op in global.OP) {
-	OPSV[global.OP[op]] = op;
+for(let op in common.OP) {
+	OPSV[common.OP[op]] = op;
 }
 
 function wordToString(word) {
-	let [op, rj, m, ri, addr] = global.splitWord(word);
+	let [op, rj, m, ri, addr] = common.splitWord(word);
 
 	if(op === 0) {
 		return 'NOP';
 	}
 
 
-	var ms = '';
+	let ms = '';
 	switch(m) {
-		case global.MODE.IMMEDIATE:
+		case common.MODE.IMMEDIATE:
 			ms = '=';
 			break;
-		case global.MODE.INDIRECT:
+		case common.MODE.INDIRECT:
 			ms = '@';
 			break;
 	}
 
-	if(op >= global.OP.JUMP && op <= global.OP.JNGRE) {
+	if(op >= common.OP.JUMP && op <= common.OP.JNGRE) {
 		return util.format('%s %d', OPSV[op], addr);
 	} else {
 		let rjs = 'R' + rj;
@@ -42,9 +42,9 @@ function wordToString(word) {
 	}
 }
 
-var debug = {
+const debug = {
 	word: function(word) {
-		var s = ('0'.repeat(32) + (word >>> 0).toString(2)).slice(-32);
+		const s = ('0'.repeat(32) + (word >>> 0).toString(2)).slice(-32);
 		console.log(s.substr(0, 8) + ' ' + s.substr(8, 3) + ' ' + s.substr(11, 2) + ' ' + s.substr(13, 3) + ' ' + s.substr(16));
 	},
 	bin: function(dec) {
@@ -53,7 +53,7 @@ var debug = {
 };
 
 
-var ttk91js = {
+const ttk91js = {
 	wordToString: wordToString,
 	compile: compile,
 	createMachine: function(settings) {

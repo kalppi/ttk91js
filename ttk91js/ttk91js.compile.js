@@ -1,8 +1,8 @@
 'use strict';
 
-var global = require('./ttk91js.global.js');
+const common = require('./ttk91js.common.js');
 
-var OPS = Object.keys(global.OP);
+const OPS = Object.keys(common.OP);
 
 const OUTPUT = {
 	CRT: 0
@@ -12,7 +12,7 @@ const SVC = {
 	HALT: 11
 };
 
-const MODE = global.MODE;
+const MODE = common.MODE;
 
 const SP = 6;
 const FP = 7;
@@ -28,7 +28,7 @@ Ttk91jsCompileException.prototype.toString = function() {
 };
 
 function makeWord(op, rj, m, ri, addr) {
-	var word = addr;
+	let word = addr;
 	word |= (op << 24);
 	word |= (rj << 21);
 	word |= (m << 19);
@@ -38,12 +38,12 @@ function makeWord(op, rj, m, ri, addr) {
 }
 
 function getOpArgCount(op) {
-	op = global.OP[op];
+	op = common.OP[op];
 
-	if(op === global.OP.NOP) return 0;
-	else if(op == global.OP.NOT) {
+	if(op === common.OP.NOP) return 0;
+	else if(op == common.OP.NOT) {
 		return 1;
-	} else if(op >= global.OP.JUMP && op <= global.OP.JNGRE) {
+	} else if(op >= common.OP.JUMP && op <= common.OP.JNGRE) {
 		return 1;
 	}
 
@@ -77,12 +77,12 @@ function isValidArgument(s) {
 }
 
 function prepare(code) {
-	var lines = code.split('\n');
-	var instructions = [];
-	var sourceMap = {};
+	const lines = code.split('\n');
+	const instructions = [];
+	const sourceMap = {};
 
-	var symbols = [];
-	var data = [];
+	const symbols = [];
+	const data = [];
 
 	function getSymbol(s) {
 		if(s[0] == '=' || s[0] == '@') {
@@ -109,7 +109,7 @@ function prepare(code) {
 	let memoryPos = 0;
 
 	for(let l = 0; l < lines.length; l++) {
-		var line = lines[l].trim();
+		let line = lines[l].trim();
 
 		let i = line.indexOf(';');
 		if(i != -1) {
@@ -209,7 +209,7 @@ function prepare(code) {
 			if(args.length == 2) {
 				i = args[1].indexOf('(');
 				if(i != -1) {
-					var j = args[1].indexOf(')', i);
+					let j = args[1].indexOf(')', i);
 					if(j == -1) {
 						throw new Ttk91jsCompileException('syntax error', l);
 					} else {
@@ -288,8 +288,8 @@ function prepare(code) {
 	};
 }
 
-var compile = function(code) {
-	var data = prepare(code);
+const compile = function(code) {
+	const data = prepare(code);
 
 	function getSymbolValue(symbol) {
 		for(let i = 0; i < data.symbols.length; i++) {
@@ -304,7 +304,7 @@ var compile = function(code) {
 		else return parseInt(reg[1]);
 	}
 
-	var words = [];
+	const words = [];
 
 	for(let i = 0; i < data.symbols.length; i++) {
 		if(data.symbols[i].type == 'relative') {
@@ -316,14 +316,14 @@ var compile = function(code) {
 
 	
 	for(let ins of data.code) {
-		var d = ins.code;
-		var op = global.OP[d[0]];
+		let d = ins.code;
+		let op = common.OP[d[0]];
 
-		var rj = 0;
-		var ri = 0;
+		let rj = 0;
+		let ri = 0;
 
-		var m = MODE.DIRECT;
-		var addr = 0;
+		let m = MODE.DIRECT;
+		let addr = 0;
 
 		if(d.length > 1) {
 			if(isRegister(d[1])) {
@@ -338,7 +338,7 @@ var compile = function(code) {
 
 			if(ri !== 0) m = MODE.IMMEDIATE;
 
-			if(op == global.OP.STORE) {
+			if(op == common.OP.STORE) {
 				m = MODE.IMMEDIATE;
 			}
 
@@ -378,13 +378,13 @@ var compile = function(code) {
 			
 		}
 
-		if(op >= global.OP.JUMP && op <= global.OP.JNGRE) {
+		if(op >= common.OP.JUMP && op <= common.OP.JNGRE) {
 			addr = rj;
 			rj = 0;
 			m = 0;
 		}
 
-		var word = makeWord(op, rj, m, ri, addr);
+		const word = makeWord(op, rj, m, ri, addr);
 
 		words.push(word);
 	}
