@@ -23,7 +23,7 @@ const PC = 8;
 
 function Machine(settings) {
 	this.settings = settings;
-	this.memory = new Memory(this, settings.memory);
+	this.memory = Object.freeze(new Memory(this, settings.memory));
 	this.reg = new Uint32Array(9);
 
 	this.stdout = {

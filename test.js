@@ -254,18 +254,18 @@ describe('Machine', function() {
 });
 
 describe('Misc', () => {
-	describe('wordToString', () => {
+	describe('wordToSymbolic', () => {
 		it('NOP', () => {
-			expect(ttk91js.wordToString(0)).to.be.equal('NOP');
+			expect(ttk91js.wordToSymbolic(0)).to.be.equal('NOP');
 		});
 		it('LOAD', () => {
-			expect(ttk91js.wordToString(35652472)).to.be.equal('LOAD R1, =888(R0)');
+			expect(ttk91js.wordToSymbolic(35652472)).to.be.equal('LOAD R1, =888(R0)');
 		});
 		it('ADD', () => {
-			expect(ttk91js.wordToString(287440896)).to.be.equal('ADD R1, =0(R2)');
+			expect(ttk91js.wordToSymbolic(287440896)).to.be.equal('ADD R1, =0(R2)');
 		});
 		it('JUMP', () => {
-			expect(ttk91js.wordToString(536870912)).to.be.equal('JUMP 0');
+			expect(ttk91js.wordToSymbolic(536870912)).to.be.equal('JUMP 0');
 		});
 	})
 });

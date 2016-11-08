@@ -13,7 +13,7 @@ for(let op in common.OP) {
 	OPSV[common.OP[op]] = op;
 }
 
-function wordToString(word) {
+function wordToSymbolic(word) {
 	let [op, rj, m, ri, addr] = common.splitWord(word);
 
 	if(op === 0) {
@@ -54,7 +54,7 @@ const debug = {
 
 
 const ttk91js = {
-	wordToString: wordToString,
+	wordToSymbolic: wordToSymbolic,
 	compile: compile,
 	createMachine: function(settings) {
 		return new Machine(settings);

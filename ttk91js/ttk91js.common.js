@@ -12,7 +12,7 @@ function splitWord(word) {
 
 module.exports = {
 	splitWord: splitWord,
-	OP: {
+	OP: Object.freeze({
 		NOP: 0,
 		STORE: 1,
 		LOAD: 2,
@@ -51,13 +51,13 @@ module.exports = {
 		PUSHR: 53,
 		POPR: 54,
 		SVC: 112
-	},
-	MODE: {
+	}),
+	MODE: Object.freeze({
 		IMMEDIATE: 0,
 		DIRECT: 1,
 		INDIRECT: 2
-	},
-	SR_BITS: {
+	}),
+	SR_BITS: Object.freeze({
 		G: 1,
 		E: 2,
 		L: 4,
@@ -69,5 +69,5 @@ module.exports = {
 		SVC: 256,
 		PRIVILEGED: 512,
 		INTERRUPTS_DISABLED: 1024
-	}
+	})
 };
