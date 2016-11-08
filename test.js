@@ -7,11 +7,10 @@ var ttk91js = require('./ttk91js/ttk91js.js');
 
 var expect = chai.expect;
 
-/*const testProgram = ttk91js.compile('aaa222 LOAD R1,=1\nLOAD R2,aaa222');
+
+const testProgram = ttk91js.compile('x DC 1\nLOAD R1, =111\nLOAD R2, =222\nLOAD R3, 333');
 const testMachine = ttk91js.createMachine({memory: 10});
 testMachine.load(testProgram);
-
-return;*/
 
 describe('Compile', function() {
 	describe('Misc', () => {
@@ -179,13 +178,16 @@ describe('Machine', function() {
 
 			it('access outside of program line number', (done) => {
 				let machine = ttk91js.createMachine({memory: memoryLimit});
-				let data = ttk91js.compile('x DC 1\nLOAD R1, =111\nLOAD R2, =222\nLOAD R3, 333');
+				let data = ttk91js.compile(
+					'x DC 1\nLOAD R1, =111\nLOAD R2, =222\nLOAD R3, 333'
+				);
+
 				machine.load(data);
 
 				try {
 					machine.run();
 				} catch(e) {
-					expect(e.line).to.equal(2);
+					expect(machine.getDebugger().getLineNumber(e)).to.equal(3);
 					done();
 				}
 			});

@@ -1,6 +1,8 @@
 'use strict';
 
 const common = require('./ttk91js.common.js');
+const CompileException = require('./ttk91js.exceptions.js').Ttk91jsCompileException;
+const Debugger = require('./ttk91js.debugger.js');
 
 const OPS = Object.keys(common.OP);
 
@@ -17,15 +19,7 @@ const MODE = common.MODE;
 const SP = 6;
 const FP = 7;
 
-function Ttk91jsCompileException(message, line) {
-	this.name = 'Ttk91jsCompileException';
-	this.message = message;
-	this.line = line;
-}
 
-Ttk91jsCompileException.prototype.toString = function() {
-	return this.name + ': ' + this.message;
-};
 
 function makeWord(op, rj, m, ri, addr) {
 	let word = addr;
@@ -79,7 +73,7 @@ function isValidArgument(s) {
 function prepare(code) {
 	const lines = code.split('\n');
 	const instructions = [];
-	const sourceMap = {};
+	const sourceMap = [];
 
 	const symbols = [];
 	const data = [];
@@ -133,7 +127,7 @@ function prepare(code) {
 
 		if(OPS.indexOf(parts[0]) == -1) {
 			if(parts.length == 1) {
-				throw new Ttk91jsCompileException('unknown opcode (' + parts[0] +')', l);
+				throw new CompileException('unknown opcode (' + parts[0] +')', l);
 			}
 
 			symbols.push({
@@ -203,7 +197,7 @@ function prepare(code) {
 
 
 			if(OPS.indexOf(op) == -1) {
-				throw new Ttk91jsCompileException('unknown opcode (' + op +')', l);
+				throw new CompileException('unknown opcode (' + op +')', l);
 			}
 
 			if(args.length == 2) {
@@ -211,7 +205,7 @@ function prepare(code) {
 				if(i != -1) {
 					let j = args[1].indexOf(')', i);
 					if(j == -1) {
-						throw new Ttk91jsCompileException('syntax error', l);
+						throw new CompileException('syntax error', l);
 					} else {
 						args.push(args[1].substring(i+1,j));
 						args[1] = args[1].substring(0, i);
@@ -239,23 +233,23 @@ function prepare(code) {
 
 			args.forEach((arg) => {
 				if(!isValidArgument(arg)) {
-					throw new Ttk91jsCompileException('syntax error (' + line + ')', l);
+					throw new CompileException('syntax error (' + line + ')', l);
 				}
 			});
 
 			args.forEach((arg) => {
 				if(arg.length == 2 && arg[0] == 'R') {
 					if(/0-9/.test(arg[1]) || parseInt(arg[1]) > 7) {
-						throw new Ttk91jsCompileException('invalid register (' + arg + ')', l);
+						throw new CompileException('invalid register (' + arg + ')', l);
 					}
 				}
 			});
 
 			if(getOpArgCount(op) != args.length - 1) {
-				throw new Ttk91jsCompileException('wrong argcount (' + op + ')', l);
+				throw new CompileException('wrong argcount (' + op + ')', l);
 			}
 
-			sourceMap[instructions.length] = l;
+			sourceMap.push(l);
 
 			instructions.push({
 				line: l,
@@ -269,13 +263,13 @@ function prepare(code) {
 			let symbol = getSymbol(ins.code[1]);
 
 			if(!symbolExists(symbol)) {
-				throw new Ttk91jsCompileException('unknown symbol (' + symbol + ')', ins.line);
+				throw new CompileException('unknown symbol (' + symbol + ')', ins.line);
 			}
 		} else if(ins.code.length == 4 && isSymbol(ins.code[2])) {
 			let symbol = getSymbol(ins.code[2]);
 
 			if(!symbolExists(symbol)) {
-				throw new Ttk91jsCompileException('unknown symbol (' + symbol + ')', ins.line);
+				throw new CompileException('unknown symbol (' + symbol + ')', ins.line);
 			}
 		}
 	}
@@ -389,7 +383,14 @@ const compile = function(code) {
 		words.push(word);
 	}
 	
-	return {code: words, symbols: data.symbols, data: data.data, sourceMap: data.sourceMap};
+	return {
+		code: words,
+		data: data.data,
+		debugData: {
+			symbols: Object.freeze(data.symbols),
+			sourceMap: Object.freeze(data.sourceMap)
+		}
+	};
 };
 
 module.exports = compile;

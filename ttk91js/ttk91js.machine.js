@@ -23,7 +23,7 @@ const PC = 8;
 
 function Machine(settings) {
 	this.settings = settings;
-	this.memory = Object.freeze(new Memory(this, settings.memory));
+	this.memory = Object.freeze(new Memory(settings.memory || 512));
 	this.reg = new Uint32Array(9);
 
 	this.stdout = {
@@ -32,25 +32,12 @@ function Machine(settings) {
 		}
 	};
 
-	this.debugger = new Debugger();
-
 	this.reset();
 }
 
 Machine.prototype = {
-	_getValue: function(m, ri, addr) {
-		let value = 0;
-
-		if(ri === 0) value = addr;
-		else value = this.reg[ri] + addr;
-
-		if(m == 3) {
-			throw new RuntimeException('Invalid memory access mode', this.debugger.PC);
-		} if(m > 0) {
-			value = this._getValue(--m, ri, this.memory.getAt(addr));
-		}
-
-		return value;
+	getDebugger: function() {
+		return this.debugger;
 	},
 
 	reset: function() {
@@ -58,7 +45,7 @@ Machine.prototype = {
 		this.SR = 0;
 		this.reg.fill(0);
 		this.memory.reset();
-		this.data = null;
+		this.debugger = null;
 	},
 
 	load: function(data) {
@@ -72,7 +59,7 @@ Machine.prototype = {
 			pos += data.data[j].size;
 		}
 
-		this.data = data;
+		this.debugger = new Debugger(data.debugData);
 	},
 
 	getRegisters: function() {
@@ -118,8 +105,23 @@ Machine.prototype = {
 		}
 	},
 
+	_getValue: function(m, ri, addr) {
+		let value = 0;
+
+		if(ri === 0) value = addr;
+		else value = this.reg[ri] + addr;
+
+		if(m >= 3) {
+			throw new RuntimeException('Invalid memory access mode');
+		} else if(m > 0) {
+			value = this._getValue(--m, ri, this.memory.getAt(addr));
+		}
+
+		return value;
+	},
+
 	_runWord: function() {
-		let IR = this.memory.getAt(this.reg[PC]);
+		const IR = this.memory.getAt(this.reg[PC]);
 
 		this.debugger.cycle(this.reg[PC], IR);
 		
@@ -243,7 +245,7 @@ Machine.prototype = {
 			case OP.JNGRE:
 				break;
 			default:
-				throw new RuntimeException('unknown opcode (' + op + ')', this.debugger.PC);
+				throw new RuntimeException('unknown opcode (' + op + ')');
 		}
 
 		if(this.settings.triggerRegisterWrite) {
