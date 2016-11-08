@@ -7,10 +7,12 @@ var ttk91js = require('./ttk91js/ttk91js.js');
 
 var expect = chai.expect;
 
-
-const testProgram = ttk91js.compile('x DC 1\nLOAD R1, =111\nLOAD R2, =222\nLOAD R3, 333');
+/*
+const testProgram = ttk91js.compile('LOAD R1,');
 const testMachine = ttk91js.createMachine({memory: 10});
 testMachine.load(testProgram);
+return;
+*/
 
 describe('Compile', function() {
 	describe('Misc', () => {
@@ -18,6 +20,12 @@ describe('Compile', function() {
 			let data = ttk91js.compile('');
 
 			expect(data.data).to.deep.equal([]);
+		});
+
+		it('Cases', () => {
+			let data = ttk91js.compile('LOAD R1, =2\nload R1, =2\nLoad r1, =2');
+
+			expect(data.code).to.deep.equal([35651586, 35651586, 35651586]);
 		});
 	});
 

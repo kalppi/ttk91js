@@ -46,7 +46,9 @@ function getOpArgCount(op) {
 
 function isRegister(reg) {
 	if(reg.length != 2) return false;
-	else if(reg == 'SP' || reg == 'FP') return true;
+	
+	reg = reg.toUpperCase();
+	if(reg == 'SP' || reg == 'FP') return true;
 	else return (reg[0] == 'R' && /[0-9]/.test(reg[1]));
 }
 
@@ -91,7 +93,7 @@ function prepare(code) {
 			if(sym.name == s) return true;
 		}
 
-		switch(s) {
+		switch(s.toUpperCase()) {
 			case 'CRT':
 			case 'HALT':
 				return true;
@@ -125,7 +127,7 @@ function prepare(code) {
 			parts = [line.substring(0, i), line.substring(i + 1)];
 		}
 
-		if(OPS.indexOf(parts[0]) == -1) {
+		if(OPS.indexOf(parts[0].toUpperCase()) == -1) {
 			if(parts.length == 1) {
 				throw new CompileException('unknown opcode (' + parts[0] +')', l);
 			}
@@ -141,120 +143,131 @@ function prepare(code) {
 			if(i != -1) parts = [parts[1].substring(0, i), parts[1].substring(i + 1)];
 		}
 
-		if(parts[0] == 'EQU') {
-			let value = parseInt(parts[1]);
-			let name = symbols.pop().name;
+		parts[0] = parts[0].toUpperCase();
 
-			symbols.push({
-				name: name,
-				value: value,
-				type: 'absolute',
-				size: 0
-			});
-		} else if(parts[0] == 'DC') {
-			let value = parseInt(parts[1]);
-			let name = symbols.pop().name;
+		let value, name;
 
-			symbols.push({
-				name: name,
-				value: memoryPos,
-				type: 'relative',
-				size: 1
-			});
+		switch(parts[0]) {
+			case 'EQU':
+				value = parseInt(parts[1]);
+				name = symbols.pop().name;
 
-			data.push({
-				value: value,
-				size: 1
-			});
-
-			memoryPos += 1;
-		} else if(parts[0] == 'DS') {
-			let size = parseInt(parts[1]);
-			let name = symbols.pop().name;
-			
-			symbols.push({
-				name: name,
-				value: memoryPos,
-				type: 'relative',
-				size: size
-			});
-
-			data.push({
-				value: 0,
-				size: size
-			});
-
-			memoryPos += size;
-		} else {
-			let op = parts.shift();
-
-			let args = [];
-			if(parts.length > 0) {
-				args = parts.join('').split(',').map((s) => {
-					return s.trim();
+				symbols.push({
+					name: name,
+					value: value,
+					type: 'absolute',
+					size: 0
 				});
-			}
+
+				break;
+			case 'DC':
+				value = parseInt(parts[1]);
+				name = symbols.pop().name;
+
+				symbols.push({
+					name: name,
+					value: memoryPos,
+					type: 'relative',
+					size: 1
+				});
+
+				data.push({
+					value: value,
+					size: 1
+				});
+
+				memoryPos += 1;
+
+				break;
+			case 'DS':
+				let size = parseInt(parts[1]);
+				name = symbols.pop().name;
+				
+				symbols.push({
+					name: name,
+					value: memoryPos,
+					type: 'relative',
+					size: size
+				});
+
+				data.push({
+					value: 0,
+					size: size
+				});
+
+				memoryPos += size;
+
+				break;
+			default:
+				let op = parts.shift();
+
+				let args = [];
+				if(parts.length > 0) {
+					args = parts.join('').split(',').map((s) => {
+						return s.trim();
+					});
+				}
 
 
-			if(OPS.indexOf(op) == -1) {
-				throw new CompileException('unknown opcode (' + op +')', l);
-			}
+				if(OPS.indexOf(op) == -1) {
+					throw new CompileException('unknown opcode (' + op +')', l);
+				}
 
-			if(args.length == 2) {
-				i = args[1].indexOf('(');
-				if(i != -1) {
-					let j = args[1].indexOf(')', i);
-					if(j == -1) {
-						throw new CompileException('syntax error', l);
-					} else {
-						args.push(args[1].substring(i+1,j));
-						args[1] = args[1].substring(0, i);
-					}
-				} else {
-					if(args[1][0] == '=') {
-						args.push('R0');
-					} else if(args[1][0] == '@') {
-						if(args[1][1] == 'R') {
-							args.push('R' + args[1][2]);
-							args[1] = '0';
+				if(args.length == 2) {
+					i = args[1].indexOf('(');
+					if(i != -1) {
+						let j = args[1].indexOf(')', i);
+						if(j == -1) {
+							throw new CompileException('syntax error', l);
 						} else {
-							args.push('R0');
+							args.push(args[1].substring(i+1,j));
+							args[1] = args[1].substring(0, i);
 						}
-					} else {
-						if(args[1][0] == 'R') {
-							args.push(args[1]);
-							args[1] = '=0';
+					} else if(args[1].length > 0) {
+						if(args[1][0] == '=') {
+							args.push('R0');
+						} else if(args[1][0] == '@') {
+							if(args[1][1].toUpperCase() == 'R') {
+								args.push('R' + args[1][2]);
+								args[1] = '0';
+							} else {
+								args.push('R0');
+							}
 						} else {
-							args.push('R0');
+							if(args[1][0].toUpperCase() == 'R') {
+								args.push(args[1]);
+								args[1] = '=0';
+							} else {
+								args.push('R0');
+							}
 						}
 					}
 				}
-			}
 
-			args.forEach((arg) => {
-				if(!isValidArgument(arg)) {
-					throw new CompileException('syntax error (' + line + ')', l);
-				}
-			});
-
-			args.forEach((arg) => {
-				if(arg.length == 2 && arg[0] == 'R') {
-					if(/0-9/.test(arg[1]) || parseInt(arg[1]) > 7) {
-						throw new CompileException('invalid register (' + arg + ')', l);
+				args.forEach((arg) => {
+					if(!isValidArgument(arg)) {
+						throw new CompileException('syntax error (' + line + ')', l);
 					}
+				});
+
+				args.forEach((arg) => {
+					if(arg.length == 2 && arg[0].toUpperCase() == 'R') {
+						if(/0-9/.test(arg[1]) || parseInt(arg[1]) > 7) {
+							throw new CompileException('invalid register (' + arg + ')', l);
+						}
+					}
+				});
+
+				if(getOpArgCount(op) != args.length - 1) {
+					throw new CompileException('wrong argcount (' + op + ')', l);
 				}
-			});
 
-			if(getOpArgCount(op) != args.length - 1) {
-				throw new CompileException('wrong argcount (' + op + ')', l);
-			}
+				sourceMap.push(l);
 
-			sourceMap.push(l);
-
-			instructions.push({
-				line: l,
-				code: [op].concat(args)
-			});
+				instructions.push({
+					line: l,
+					code: [op].concat(args)
+				});
 		}
 	}
 
