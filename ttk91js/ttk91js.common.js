@@ -1,12 +1,18 @@
-
+'use strict';
 
 function splitWord(word) {
+	let addr = (word & 0xffff);
+
+	if(addr & 32768) {
+		addr = (-(~addr))-1;
+	}
+
 	return [
 		(word & (0xff << 24)) >> 24,	//op
 		(word & (0x7 << 21)) >> 21,		//rj
 		(word & (0x3 << 19)) >> 19,		//m
 		(word & (0x7 << 16)) >> 16,		//ri
-		(word & 0xffff)					//addr
+		addr
 	];
 }
 

@@ -2,7 +2,7 @@ const Ttk91jsRuntimeException = require('./ttk91js.exceptions.js').Ttk91jsRuntim
 
 function Registers(machine) {
 	this.machine = machine;
-	this.reg = new Uint32Array(9);
+	this.reg = new Int16Array(9);
 }
 
 Registers.prototype = {

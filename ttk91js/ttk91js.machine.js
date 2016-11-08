@@ -113,7 +113,7 @@ Machine.prototype = {
 		else value = this.registers.get(ri) + addr;
 
 		if(m >= 3) {
-			throw new RuntimeException('Invalid memory access mode');
+			throw new RuntimeException('Invalid memory access mode (' + m + ')');
 		} else if(m > 0) {
 			value = this._getValue(--m, ri, this.memory.getAt(addr));
 		}

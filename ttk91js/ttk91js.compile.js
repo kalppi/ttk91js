@@ -22,7 +22,11 @@ const FP = 7;
 
 
 function makeWord(op, rj, m, ri, addr) {
-	let word = addr;
+	let word = 0;
+
+	if(addr >= 0) word |= addr;
+	else word = (~Math.abs(addr) & 0xFFFF) + 1;
+
 	word |= (op << 24);
 	word |= (rj << 21);
 	word |= (m << 19);
@@ -65,7 +69,7 @@ function isInteger(s) {
 		s = s.substring(1);
 	}
 
-	return /^[0-9]+$/.test(s);
+	return /^-*[0-9]+$/.test(s);
 }
 
 function isValidArgument(s) {
@@ -354,7 +358,7 @@ const compile = function(code) {
 
 				let s = d[2].substring(1);
 
-				if(/^[0-9]+$/i.test(s)) {
+				if(isInteger(s)) {
 					addr = parseInt(s);
 				} else {
 					switch(s) {
@@ -375,14 +379,12 @@ const compile = function(code) {
 
 				addr = getSymbolValue(s);
 			} else {
-				if(/^[a-z]+$/i.test(d[2])) {
+				if(isSymbol(d[2])) {
 					addr = getSymbolValue(d[2]);
 				} else {
 					addr = parseInt(d[2]);
 				}
 			}
-
-			
 		}
 
 		if(op >= common.OP.JUMP && op <= common.OP.JNGRE) {

@@ -7,13 +7,6 @@ var ttk91js = require('./ttk91js/ttk91js.js');
 
 var expect = chai.expect;
 
-
-/*const testProgram = ttk91js.compile('LOAD R3, =2');
-const testMachine = ttk91js.createMachine({memory: 10});
-testMachine.load(testProgram);
-testMachine.run();
-return;*/
-
 describe('Compile', function() {
 	describe('Misc', () => {
 		it('Empty', () => {
@@ -26,6 +19,12 @@ describe('Compile', function() {
 			let data = ttk91js.compile('LOAD R1, =2\nload R1, =2\nLoad r1, =2');
 
 			expect(data.code).to.deep.equal([35651586, 35651586, 35651586]);
+		});
+
+		it('Negative and positive numbers', () => {
+			let data = ttk91js.compile('LOAD R2, =5\nLOAD R2, =-5');
+
+			expect(data.code).to.deep.equal([37748741, 37814267]);
 		});
 	});
 
@@ -261,15 +260,15 @@ describe('Machine', function() {
 	});
 
 	describe('Stdout', () => {
-		let machine = ttk91js.createMachine({
-			memory: memoryLimit,
-		});
-
-		let data = ttk91js.compile('LOAD R1, =123\nOUT R1, =CRT');
-
-		machine.load(data);
-
 		it('redirect', (done) => {
+			let machine = ttk91js.createMachine({
+				memory: memoryLimit,
+			});
+
+			let data = ttk91js.compile('LOAD R1, =123\nOUT R1, =CRT');
+
+			machine.load(data);
+
 			machine.setStdout({
 				write: function(out) {
 					expect(out).to.be.equal(123);
@@ -280,7 +279,27 @@ describe('Machine', function() {
 
 			machine.run();
 		})
-	})
+
+		it('Negative numbers', (done) => {
+			let machine = ttk91js.createMachine({
+				memory: memoryLimit,
+			});
+
+			let data = ttk91js.compile('LOAD R1, =-123\nOUT R1, =CRT');
+
+			machine.load(data);
+			
+			machine.setStdout({
+				write: function(out) {
+					expect(out).to.be.equal(-123);
+
+					done();
+				}
+			});
+
+			machine.run();
+		});
+	});
 });
 
 describe('Misc', () => {
