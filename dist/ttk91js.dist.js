@@ -1505,6 +1505,7 @@ var _typeof = typeof Symbol === "function" && typeof Symbol.iterator === "symbol
 			var MicroEvent = require('microevent');
 			var common = require('./ttk91js.common.js');
 			var RuntimeException = require('./ttk91js.exceptions.js').Ttk91jsRuntimeException;
+			var Registers = require('./ttk91js.registers.js');
 			var Memory = require('./ttk91js.memory.js');
 			var Debugger = require('./ttk91js.debugger.js');
 
@@ -1525,8 +1526,8 @@ var _typeof = typeof Symbol === "function" && typeof Symbol.iterator === "symbol
 
 			function Machine(settings) {
 				this.settings = settings;
-				this.memory = Object.freeze(new Memory(settings.memory || 512));
-				this.reg = new Uint32Array(9);
+				this.memory = Object.freeze(new Memory(this, settings.memory || 512));
+				this.registers = new Registers(this);
 
 				this.stdout = {
 					write: function write(out) {
@@ -1545,7 +1546,7 @@ var _typeof = typeof Symbol === "function" && typeof Symbol.iterator === "symbol
 				reset: function reset() {
 					this.ok = true;
 					this.SR = 0;
-					this.reg.fill(0);
+					this.registers.reset();
 					this.memory.reset();
 					this.debugger = null;
 				},
@@ -1565,7 +1566,7 @@ var _typeof = typeof Symbol === "function" && typeof Symbol.iterator === "symbol
 				},
 
 				getRegisters: function getRegisters() {
-					return this.reg;
+					return this.registers;
 				},
 
 				getMemory: function getMemory() {
@@ -1596,7 +1597,7 @@ var _typeof = typeof Symbol === "function" && typeof Symbol.iterator === "symbol
 				},
 
 				isRunning: function isRunning() {
-					return this.ok && this.reg[PC] < this.memory.size();
+					return this.ok && this.registers.get(PC) < this.memory.size();
 				},
 
 				runWord: function runWord(count) {
@@ -1610,7 +1611,7 @@ var _typeof = typeof Symbol === "function" && typeof Symbol.iterator === "symbol
 				_getValue: function _getValue(m, ri, addr) {
 					var value = 0;
 
-					if (ri === 0) value = addr;else value = this.reg[ri] + addr;
+					if (ri === 0) value = addr;else value = this.registers.get(ri) + addr;
 
 					if (m >= 3) {
 						throw new RuntimeException('Invalid memory access mode');
@@ -1622,9 +1623,9 @@ var _typeof = typeof Symbol === "function" && typeof Symbol.iterator === "symbol
 				},
 
 				_runWord: function _runWord() {
-					var IR = this.memory.getAt(this.reg[PC]);
+					var IR = this.memory.getAt(this.registers.get(PC));
 
-					this.debugger.cycle(this.reg[PC], IR);
+					this.debugger.cycle(this.registers.get(PC), IR);
 
 					var _common$splitWord3 = common.splitWord(IR),
 					    _common$splitWord4 = _slicedToArray(_common$splitWord3, 5),
@@ -1636,31 +1637,24 @@ var _typeof = typeof Symbol === "function" && typeof Symbol.iterator === "symbol
 
 					var TR = this._getValue(m, ri, addr);
 
-					this.reg[PC]++;
+					this.registers.add(PC, 1);
 
 					switch (op) {
 						case OP.NOP:
 							break;
 						case OP.STORE:
-							if (this.settings.triggerMemoryWrite) {
-								this.trigger('memory-write', TR, this.memory.getAt(TR), this.reg[rj]);
-							}
-
-							this.memory.setAt(TR, this.reg[rj]);
+							this.memory.setAt(TR, this.registers.get(rj));
 
 							break;
 						case OP.LOAD:
-							if (this.settings.triggerRegisterWrite) {
-								this.trigger('register-write', rj, this.reg[rj], TR);
-							}
 
-							this.reg[rj] = TR;
+							this.registers.set(rj, TR);
 
 							break;
 						case OP.OUT:
 							switch (addr) {
 								case OUTPUT.CRT:
-									this.stdout.write(this.reg[rj]);
+									this.stdout.write(this.registers.get(rj));
 
 									break;
 							}
@@ -1668,40 +1662,40 @@ var _typeof = typeof Symbol === "function" && typeof Symbol.iterator === "symbol
 							break;
 
 						case OP.ADD:
-							this.reg[rj] += TR;
+							this.registers.add(rj, TR);
 							break;
 						case OP.SUB:
-							this.reg[rj] -= TR;
+							this.registers.add(rj, -TR);
 							break;
 						case OP.DIV:
-							this.reg[rj] = Math.floor(this.reg[rj] / TR);
+							this.registers.set(rj, Math.floor(this.registers.get(rj) / TR));
 							break;
 						case OP.MUL:
-							this.reg[rj] *= TR;
+							this.registers.set(rj, this.registers.get(rj) * TR);
 							break;
 						case OP.MOD:
-							this.reg[rj] = this.reg[rj] % TR;
+							this.registers.set(rj, this.registers.get(rj) % TR);
 							break;
 						case OP.AND:
-							this.reg[rj] = this.reg[rj] & TR;
+							this.registers.set(rj, this.registers.get(rj) & TR);
 							break;
 						case OP.OR:
-							this.reg[rj] = this.reg[rj] | TR;
+							this.registers.set(rj, this.registers.get(rj) | TR);
 							break;
 						case OP.XOR:
-							this.reg[rj] = this.reg[rj] ^ TR;
+							this.registers.set(rj, this.registers.get(rj) ^ TR);
 							break;
 						case OP.SHL:
-							this.reg[rj] = this.reg[rj] << TR;
+							this.registers.set(rj, this.registers.get(rj) << TR);
 							break;
 						case OP.SHR:
-							this.reg[rj] = this.reg[rj] >> TR;
+							this.registers.set(rj, this.registers.get(rj) >> TR);
 							break;
 						case OP.SHRA:
-							this.reg[rj] = this.reg[rj] >>> TR;
+							this.registers.set(rj, this.registers.get(rj) >>> TR);
 							break;
 						case OP.NOT:
-							this.reg[rj] = ~this.reg[rj];
+							this.registers.set(rj, ~this.registers.get(rj));
 							break;
 						case OP.SVC:
 							switch (addr) {
@@ -1715,13 +1709,15 @@ var _typeof = typeof Symbol === "function" && typeof Symbol.iterator === "symbol
 						case OP.COMP:
 							this.SR = 0;
 
-							if (this.reg[rj] == TR) this.SR |= SR_BITS.E;
-							if (this.reg[rj] > TR) this.SR |= SR_BITS.G;
-							if (this.reg[rj] < TR) this.SR |= SR_BITS.L;
+							var v = this.registers.get(rj);
+
+							if (v == TR) this.SR |= SR_BITS.E;
+							if (v > TR) this.SR |= SR_BITS.G;
+							if (v < TR) this.SR |= SR_BITS.L;
 
 							break;
 						case OP.JUMP:
-							this.reg[PC] = addr;
+							this.registers.set(PC, addr);
 
 							break;
 						case OP.JNEG:
@@ -1739,7 +1735,7 @@ var _typeof = typeof Symbol === "function" && typeof Symbol.iterator === "symbol
 						case OP.JLES:
 							break;
 						case OP.JEQU:
-							if (this.SR & SR_BITS.E) this.reg[PC] = this.memory.getAt(addr);
+							if (this.SR & SR_BITS.E) this.registers.set(PC, this.memory.getAt(addr));
 
 							break;
 						case OP.JGRE:
@@ -1747,7 +1743,7 @@ var _typeof = typeof Symbol === "function" && typeof Symbol.iterator === "symbol
 						case OP.JNLES:
 							break;
 						case OP.JNEQU:
-							if (!(this.SR & SR_BITS.E)) this.reg[PC] = this.memory.getAt(addr);
+							if (!(this.SR & SR_BITS.E)) this.registers.set(PC, this.memory.getAt(addr));
 
 							break;
 						case OP.JNGRE:
@@ -1756,11 +1752,7 @@ var _typeof = typeof Symbol === "function" && typeof Symbol.iterator === "symbol
 							throw new RuntimeException('unknown opcode (' + op + ')');
 					}
 
-					this.debugger.cycleEnd(this.reg[PC]);
-
-					if (this.settings.triggerRegisterWrite) {
-						this.trigger('register-write', PC, this.debugger.PC, this.reg[PC]);
-					}
+					this.debugger.cycleEnd(this.registers.get(PC));
 				}
 			};
 
@@ -1768,10 +1760,11 @@ var _typeof = typeof Symbol === "function" && typeof Symbol.iterator === "symbol
 
 			module.exports = Machine;
 		}).call(this, require('_process'));
-	}, { "./ttk91js.common.js": 6, "./ttk91js.debugger.js": 8, "./ttk91js.exceptions.js": 9, "./ttk91js.memory.js": 12, "_process": 2, "microevent": 1 }], 12: [function (require, module, exports) {
+	}, { "./ttk91js.common.js": 6, "./ttk91js.debugger.js": 8, "./ttk91js.exceptions.js": 9, "./ttk91js.memory.js": 12, "./ttk91js.registers.js": 13, "_process": 2, "microevent": 1 }], 12: [function (require, module, exports) {
 		var Ttk91jsRuntimeException = require('./ttk91js.exceptions.js').Ttk91jsRuntimeException;
 
-		function Memory(size) {
+		function Memory(machine, size) {
+			this.machine = machine;
 			this.memory = new Uint32Array(size);
 		}
 
@@ -1779,6 +1772,10 @@ var _typeof = typeof Symbol === "function" && typeof Symbol.iterator === "symbol
 			setAt: function setAt(addr, value) {
 				if (addr < 0 || addr >= this.memory.length) {
 					throw new Ttk91jsRuntimeException('trying to access outside of program memory (' + addr + ')');
+				}
+
+				if (this.machine.settings.triggerMemoryWrite) {
+					this.machine.trigger('memory-write', addr, this.memory[addr], value);
 				}
 
 				this.memory[addr] = value;
@@ -1806,4 +1803,47 @@ var _typeof = typeof Symbol === "function" && typeof Symbol.iterator === "symbol
 		};
 
 		module.exports = Memory;
+	}, { "./ttk91js.exceptions.js": 9 }], 13: [function (require, module, exports) {
+		var Ttk91jsRuntimeException = require('./ttk91js.exceptions.js').Ttk91jsRuntimeException;
+
+		function Registers(machine) {
+			this.machine = machine;
+			this.reg = new Uint32Array(9);
+		}
+
+		Registers.prototype = {
+			set: function set(addr, value) {
+				if (addr < 0 || addr >= this.reg.length) {
+					throw new Ttk91jsRuntimeException('trying to access invalid register (' + addr + ')');
+				}
+
+				if (this.machine.settings.triggerRegisterWrite) {
+					this.machine.trigger('register-write', addr, this.reg[addr], value);
+				}
+
+				this.reg[addr] = value;
+			},
+
+			get: function get(addr) {
+				if (addr < 0 || addr >= this.reg.length) {
+					throw new Ttk91jsRuntimeException('trying to access invalid register (' + addr + ')');
+				}
+
+				return this.reg[addr];
+			},
+
+			add: function add(addr, val) {
+				this.set(addr, this.reg[addr] + val);
+			},
+
+			getAll: function getAll() {
+				return this.reg;
+			},
+
+			reset: function reset() {
+				this.reg.fill(0);
+			}
+		};
+
+		module.exports = Registers;
 	}, { "./ttk91js.exceptions.js": 9 }] }, {}, [10]);
