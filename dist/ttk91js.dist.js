@@ -1553,12 +1553,12 @@ var _typeof = typeof Symbol === "function" && typeof Symbol.iterator === "symbol
 
 				load: function load(data) {
 					for (var i = 0; i < data.code.length; i++) {
-						this.memory.setAt(i, data.code[i]);
+						this.memory.setAt(i, data.code[i], true);
 					}
 
 					var pos = 0;
 					for (var j = 0; j < data.data.length; j++) {
-						this.memory.setAt(i + pos, data.data[j].value);
+						this.memory.setAt(i + pos, data.data[j].value, true);
 						pos += data.data[j].size;
 					}
 
@@ -1769,12 +1769,14 @@ var _typeof = typeof Symbol === "function" && typeof Symbol.iterator === "symbol
 		}
 
 		Memory.prototype = {
-			setAt: function setAt(addr, value) {
+			setAt: function setAt(addr, value, silent) {
+				silent = silent || false;
+
 				if (addr < 0 || addr >= this.memory.length) {
 					throw new Ttk91jsRuntimeException('trying to access outside of program memory (' + addr + ')');
 				}
 
-				if (this.machine.settings.triggerMemoryWrite) {
+				if (!silent && this.machine.settings.triggerMemoryWrite) {
 					this.machine.trigger('memory-write', addr, this.memory[addr], value);
 				}
 

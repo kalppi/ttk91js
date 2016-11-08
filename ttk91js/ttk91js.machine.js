@@ -51,12 +51,12 @@ Machine.prototype = {
 
 	load: function(data) {
 		for(var i = 0; i < data.code.length; i++) {
-			this.memory.setAt(i, data.code[i]);
+			this.memory.setAt(i, data.code[i], true);
 		}
 
 		let pos = 0;
 		for(let j = 0; j < data.data.length; j++) {
-			this.memory.setAt(i + pos, data.data[j].value);
+			this.memory.setAt(i + pos, data.data[j].value, true);
 			pos += data.data[j].size;
 		}
 

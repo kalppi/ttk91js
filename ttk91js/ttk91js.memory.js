@@ -6,12 +6,14 @@ function Memory(machine, size) {
 }
 
 Memory.prototype = {
-	setAt: function(addr, value) {
+	setAt: function(addr, value, silent) {
+		silent = silent || false;
+
 		if(addr < 0 || addr >= this.memory.length) {
 			throw new Ttk91jsRuntimeException('trying to access outside of program memory (' + addr + ')');
 		}
 
-		if(this.machine.settings.triggerMemoryWrite) {
+		if(!silent && this.machine.settings.triggerMemoryWrite) {
 			this.machine.trigger('memory-write', addr, this.memory[addr], value);
 		}
 
