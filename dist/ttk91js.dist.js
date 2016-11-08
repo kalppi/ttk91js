@@ -823,13 +823,20 @@ var _typeof = typeof Symbol === "function" && typeof Symbol.iterator === "symbol
 			}
 		}).call(this, require('_process'), typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {});
 	}, { "./support/isBuffer": 4, "_process": 2, "inherits": 3 }], 6: [function (require, module, exports) {
+		'use strict';
 
 		function splitWord(word) {
+			var addr = word & 0xffff;
+
+			if (addr & 32768) {
+				addr = -~addr - 1;
+			}
+
 			return [(word & 0xff << 24) >> 24, //op
 			(word & 0x7 << 21) >> 21, //rj
 			(word & 0x3 << 19) >> 19, //m
 			(word & 0x7 << 16) >> 16, //ri
-			word & 0xffff];
+			addr];
 		}
 
 		module.exports = {
@@ -916,7 +923,10 @@ var _typeof = typeof Symbol === "function" && typeof Symbol.iterator === "symbol
 		var FP = 7;
 
 		function makeWord(op, rj, m, ri, addr) {
-			var word = addr;
+			var word = 0;
+
+			if (addr >= 0) word |= addr;else word = (~Math.abs(addr) & 0xFFFF) + 1;
+
 			word |= op << 24;
 			word |= rj << 21;
 			word |= m << 19;
@@ -958,7 +968,7 @@ var _typeof = typeof Symbol === "function" && typeof Symbol.iterator === "symbol
 				s = s.substring(1);
 			}
 
-			return (/^[0-9]+$/.test(s)
+			return (/^-*[0-9]+$/.test(s)
 			);
 		}
 
@@ -1301,7 +1311,7 @@ var _typeof = typeof Symbol === "function" && typeof Symbol.iterator === "symbol
 
 							var s = d[2].substring(1);
 
-							if (/^[0-9]+$/i.test(s)) {
+							if (isInteger(s)) {
 								addr = parseInt(s);
 							} else {
 								switch (s) {
@@ -1322,7 +1332,7 @@ var _typeof = typeof Symbol === "function" && typeof Symbol.iterator === "symbol
 
 							addr = getSymbolValue(_s);
 						} else {
-							if (/^[a-z]+$/i.test(d[2])) {
+							if (isSymbol(d[2])) {
 								addr = getSymbolValue(d[2]);
 							} else {
 								addr = parseInt(d[2]);
@@ -1614,7 +1624,7 @@ var _typeof = typeof Symbol === "function" && typeof Symbol.iterator === "symbol
 					if (ri === 0) value = addr;else value = this.registers.get(ri) + addr;
 
 					if (m >= 3) {
-						throw new RuntimeException('Invalid memory access mode');
+						throw new RuntimeException('Invalid memory access mode (' + m + ')');
 					} else if (m > 0) {
 						value = this._getValue(--m, ri, this.memory.getAt(addr));
 					}
@@ -1810,7 +1820,7 @@ var _typeof = typeof Symbol === "function" && typeof Symbol.iterator === "symbol
 
 		function Registers(machine) {
 			this.machine = machine;
-			this.reg = new Uint32Array(9);
+			this.reg = new Int16Array(9);
 		}
 
 		Registers.prototype = {
