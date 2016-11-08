@@ -938,7 +938,10 @@ var _typeof = typeof Symbol === "function" && typeof Symbol.iterator === "symbol
 		}
 
 		function isRegister(reg) {
-			if (reg.length != 2) return false;else if (reg == 'SP' || reg == 'FP') return true;else return reg[0] == 'R' && /[0-9]/.test(reg[1]);
+			if (reg.length != 2) return false;
+
+			reg = reg.toUpperCase();
+			if (reg == 'SP' || reg == 'FP') return true;else return reg[0] == 'R' && /[0-9]/.test(reg[1]);
 		}
 
 		function isSymbol(s) {
@@ -1005,7 +1008,7 @@ var _typeof = typeof Symbol === "function" && typeof Symbol.iterator === "symbol
 					}
 				}
 
-				switch (s) {
+				switch (s.toUpperCase()) {
 					case 'CRT':
 					case 'HALT':
 						return true;
@@ -1039,7 +1042,7 @@ var _typeof = typeof Symbol === "function" && typeof Symbol.iterator === "symbol
 					parts = [line.substring(0, i), line.substring(i + 1)];
 				}
 
-				if (OPS.indexOf(parts[0]) == -1) {
+				if (OPS.indexOf(parts[0].toUpperCase()) == -1) {
 					if (parts.length == 1) {
 						throw new CompileException('unknown opcode (' + parts[0] + ')', l);
 					}
@@ -1055,119 +1058,131 @@ var _typeof = typeof Symbol === "function" && typeof Symbol.iterator === "symbol
 					if (i != -1) parts = [parts[1].substring(0, i), parts[1].substring(i + 1)];
 				}
 
-				if (parts[0] == 'EQU') {
-					var value = parseInt(parts[1]);
-					var name = symbols.pop().name;
+				parts[0] = parts[0].toUpperCase();
 
-					symbols.push({
-						name: name,
-						value: value,
-						type: 'absolute',
-						size: 0
-					});
-				} else if (parts[0] == 'DC') {
-					var _value = parseInt(parts[1]);
-					var _name = symbols.pop().name;
+				var value = void 0,
+				    name = void 0;
 
-					symbols.push({
-						name: _name,
-						value: memoryPos,
-						type: 'relative',
-						size: 1
-					});
+				switch (parts[0]) {
+					case 'EQU':
+						value = parseInt(parts[1]);
+						name = symbols.pop().name;
 
-					data.push({
-						value: _value,
-						size: 1
-					});
-
-					memoryPos += 1;
-				} else if (parts[0] == 'DS') {
-					var size = parseInt(parts[1]);
-					var _name2 = symbols.pop().name;
-
-					symbols.push({
-						name: _name2,
-						value: memoryPos,
-						type: 'relative',
-						size: size
-					});
-
-					data.push({
-						value: 0,
-						size: size
-					});
-
-					memoryPos += size;
-				} else {
-					var op = parts.shift();
-
-					var args = [];
-					if (parts.length > 0) {
-						args = parts.join('').split(',').map(function (s) {
-							return s.trim();
+						symbols.push({
+							name: name,
+							value: value,
+							type: 'absolute',
+							size: 0
 						});
-					}
 
-					if (OPS.indexOf(op) == -1) {
-						throw new CompileException('unknown opcode (' + op + ')', l);
-					}
+						break;
+					case 'DC':
+						value = parseInt(parts[1]);
+						name = symbols.pop().name;
 
-					if (args.length == 2) {
-						i = args[1].indexOf('(');
-						if (i != -1) {
-							var j = args[1].indexOf(')', i);
-							if (j == -1) {
-								throw new CompileException('syntax error', l);
-							} else {
-								args.push(args[1].substring(i + 1, j));
-								args[1] = args[1].substring(0, i);
-							}
-						} else {
-							if (args[1][0] == '=') {
-								args.push('R0');
-							} else if (args[1][0] == '@') {
-								if (args[1][1] == 'R') {
-									args.push('R' + args[1][2]);
-									args[1] = '0';
+						symbols.push({
+							name: name,
+							value: memoryPos,
+							type: 'relative',
+							size: 1
+						});
+
+						data.push({
+							value: value,
+							size: 1
+						});
+
+						memoryPos += 1;
+
+						break;
+					case 'DS':
+						var size = parseInt(parts[1]);
+						name = symbols.pop().name;
+
+						symbols.push({
+							name: name,
+							value: memoryPos,
+							type: 'relative',
+							size: size
+						});
+
+						data.push({
+							value: 0,
+							size: size
+						});
+
+						memoryPos += size;
+
+						break;
+					default:
+						var op = parts.shift();
+
+						var args = [];
+						if (parts.length > 0) {
+							args = parts.join('').split(',').map(function (s) {
+								return s.trim();
+							});
+						}
+
+						if (OPS.indexOf(op) == -1) {
+							throw new CompileException('unknown opcode (' + op + ')', l);
+						}
+
+						if (args.length == 2) {
+							i = args[1].indexOf('(');
+							if (i != -1) {
+								var j = args[1].indexOf(')', i);
+								if (j == -1) {
+									throw new CompileException('syntax error', l);
 								} else {
-									args.push('R0');
+									args.push(args[1].substring(i + 1, j));
+									args[1] = args[1].substring(0, i);
 								}
-							} else {
-								if (args[1][0] == 'R') {
-									args.push(args[1]);
-									args[1] = '=0';
+							} else if (args[1].length > 0) {
+								if (args[1][0] == '=') {
+									args.push('R0');
+								} else if (args[1][0] == '@') {
+									if (args[1][1].toUpperCase() == 'R') {
+										args.push('R' + args[1][2]);
+										args[1] = '0';
+									} else {
+										args.push('R0');
+									}
 								} else {
-									args.push('R0');
+									if (args[1][0].toUpperCase() == 'R') {
+										args.push(args[1]);
+										args[1] = '=0';
+									} else {
+										args.push('R0');
+									}
 								}
 							}
 						}
-					}
 
-					args.forEach(function (arg) {
-						if (!isValidArgument(arg)) {
-							throw new CompileException('syntax error (' + line + ')', l);
-						}
-					});
-
-					args.forEach(function (arg) {
-						if (arg.length == 2 && arg[0] == 'R') {
-							if (/0-9/.test(arg[1]) || parseInt(arg[1]) > 7) {
-								throw new CompileException('invalid register (' + arg + ')', l);
+						args.forEach(function (arg) {
+							if (!isValidArgument(arg)) {
+								throw new CompileException('syntax error (' + line + ')', l);
 							}
+						});
+
+						args.forEach(function (arg) {
+							if (arg.length == 2 && arg[0].toUpperCase() == 'R') {
+								if (/0-9/.test(arg[1]) || parseInt(arg[1]) > 7) {
+									throw new CompileException('invalid register (' + arg + ')', l);
+								}
+							}
+						});
+
+						if (getOpArgCount(op) != args.length - 1) {
+							throw new CompileException('wrong argcount (' + op + ')', l);
 						}
-					});
 
-					if (getOpArgCount(op) != args.length - 1) {
-						throw new CompileException('wrong argcount (' + op + ')', l);
-					}
+						sourceMap.push(l);
 
-					sourceMap.push(l);
-
-					instructions.push({
-						line: l,
-						code: [op].concat(args)
-					});
+						instructions.push({
+							line: l,
+							code: [op].concat(args)
+						});
 				}
 			};
 
