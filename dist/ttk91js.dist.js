@@ -934,7 +934,7 @@ var _typeof = typeof Symbol === "function" && typeof Symbol.iterator === "symbol
 				return 1;
 			}
 
-			return 2;
+			return 3;
 		}
 
 		function isRegister(reg) {
@@ -1173,7 +1173,7 @@ var _typeof = typeof Symbol === "function" && typeof Symbol.iterator === "symbol
 							}
 						});
 
-						if (getOpArgCount(op) != args.length - 1) {
+						if (getOpArgCount(op) != args.length) {
 							throw new CompileException('wrong argcount (' + op + ')', l);
 						}
 
@@ -1382,8 +1382,6 @@ var _typeof = typeof Symbol === "function" && typeof Symbol.iterator === "symbol
 			cycle: function cycle(PC, IR) {
 				this.PC = PC;
 				this.IR = IR;
-
-				console.log("#" + PC);
 			},
 
 			cycleEnd: function cycleEnd(PC) {
