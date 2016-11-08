@@ -954,7 +954,7 @@ var _typeof = typeof Symbol === "function" && typeof Symbol.iterator === "symbol
 				s = s.substring(1);
 			}
 
-			return (/^[a-z]+$/i.test(s)
+			return (/^[a-z][0-9a-z]*$/i.test(s)
 			);
 		}
 
@@ -1589,7 +1589,7 @@ var _typeof = typeof Symbol === "function" && typeof Symbol.iterator === "symbol
 					    ri = _common$splitWord4[3],
 					    addr = _common$splitWord4[4];
 
-					var value = this._getValue(m, ri, addr);
+					var TR = this._getValue(m, ri, addr);
 
 					this.reg[PC]++;
 
@@ -1598,18 +1598,18 @@ var _typeof = typeof Symbol === "function" && typeof Symbol.iterator === "symbol
 							break;
 						case OP.STORE:
 							if (this.settings.triggerMemoryWrite) {
-								this.trigger('memory-write', value, this.memory.getAt(value), this.reg[rj]);
+								this.trigger('memory-write', TR, this.memory.getAt(TR), this.reg[rj]);
 							}
 
-							this.memory.setAt(value, this.reg[rj]);
+							this.memory.setAt(TR, this.reg[rj]);
 
 							break;
 						case OP.LOAD:
 							if (this.settings.triggerRegisterWrite) {
-								this.trigger('register-write', rj, this.reg[rj], value);
+								this.trigger('register-write', rj, this.reg[rj], TR);
 							}
 
-							this.reg[rj] = value;
+							this.reg[rj] = TR;
 
 							break;
 						case OP.OUT:
@@ -1623,37 +1623,37 @@ var _typeof = typeof Symbol === "function" && typeof Symbol.iterator === "symbol
 							break;
 
 						case OP.ADD:
-							this.reg[rj] += value;
+							this.reg[rj] += TR;
 							break;
 						case OP.SUB:
-							this.reg[rj] -= value;
+							this.reg[rj] -= TR;
 							break;
 						case OP.DIV:
-							this.reg[rj] = Math.floor(this.reg[rj] / value);
+							this.reg[rj] = Math.floor(this.reg[rj] / TR);
 							break;
 						case OP.MUL:
-							this.reg[rj] *= value;
+							this.reg[rj] *= TR;
 							break;
 						case OP.MOD:
-							this.reg[rj] = this.reg[rj] % value;
+							this.reg[rj] = this.reg[rj] % TR;
 							break;
 						case OP.AND:
-							this.reg[rj] = this.reg[rj] & value;
+							this.reg[rj] = this.reg[rj] & TR;
 							break;
 						case OP.OR:
-							this.reg[rj] = this.reg[rj] | value;
+							this.reg[rj] = this.reg[rj] | TR;
 							break;
 						case OP.XOR:
-							this.reg[rj] = this.reg[rj] ^ value;
+							this.reg[rj] = this.reg[rj] ^ TR;
 							break;
 						case OP.SHL:
-							this.reg[rj] = this.reg[rj] << value;
+							this.reg[rj] = this.reg[rj] << TR;
 							break;
 						case OP.SHR:
-							this.reg[rj] = this.reg[rj] >> value;
+							this.reg[rj] = this.reg[rj] >> TR;
 							break;
 						case OP.SHRA:
-							this.reg[rj] = this.reg[rj] >>> value;
+							this.reg[rj] = this.reg[rj] >>> TR;
 							break;
 						case OP.NOT:
 							this.reg[rj] = ~this.reg[rj];
@@ -1670,9 +1670,9 @@ var _typeof = typeof Symbol === "function" && typeof Symbol.iterator === "symbol
 						case OP.COMP:
 							this.SR = 0;
 
-							if (this.reg[rj] == value) this.SR |= SR_BITS.E;
-							if (this.reg[rj] > value) this.SR |= SR_BITS.G;
-							if (this.reg[rj] < value) this.SR |= SR_BITS.L;
+							if (this.reg[rj] == TR) this.SR |= SR_BITS.E;
+							if (this.reg[rj] > TR) this.SR |= SR_BITS.G;
+							if (this.reg[rj] < TR) this.SR |= SR_BITS.L;
 
 							break;
 						case OP.JUMP:
