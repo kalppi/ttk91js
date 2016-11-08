@@ -2,6 +2,9 @@
 
 var MicroEvent = require('microevent');
 var global = require('./ttk91js.global.js');
+var Ttk91jsRuntimeException = require('./ttk91js.exceptions.js').Ttk91jsRuntimeException;
+var Memory = require('./ttk91js.memory.js');
+var Debugger = require('./ttk91js.debugger.js');
 
 const OUTPUT = {
 	CRT: 0
@@ -11,30 +14,16 @@ const SVC = {
 	HALT: 11
 };
 
-const BIT_L = 4;
-const BIT_E = 2;
-const BIT_G = 1;
+const OP = global.OP;
+const SR_BITS = global.SR_BITS;
 
 const SP = 6;
 const FP = 7;
 const PC = 8;
 
-const OP = global.OP;
-
-function Ttk91jsRuntimeException(message, line) {
-	this.name = 'Ttk91jsRuntimeException';
-	this.message = message;
-	this.line = line;
-}
-
-Ttk91jsRuntimeException.prototype.toString = function() {
-	return this.name + ': ' + this.message;
-};
-
 function Machine(settings) {
 	this.settings = settings;
-
-	this.memory = new Uint32Array(settings.memory);
+	this.memory = new Memory(this, settings.memory);
 	this.reg = new Uint32Array(9);
 
 	this.stdout = {
@@ -43,8 +32,7 @@ function Machine(settings) {
 		}
 	};
 
-	this.oldPC = 0;
-	this.data = null;
+	this.debugger = new Debugger();
 
 	this.reset();
 }
@@ -56,42 +44,36 @@ Machine.prototype = {
 		if(ri === 0) value = addr;
 		else value = this.reg[ri] + addr;
 
-		if(m > 0) {
-			value = this._getValue(--m, ri, this.getMemoryAt(addr));
+		if(m == 3) {
+			throw new Ttk91jsRuntimeException('Invalid memory access mode', this.debugger.PC);
+		} if(m > 0) {
+			value = this._getValue(--m, ri, this.memory.getAt(addr));
 		}
 
 		return value;
 	},
 
+	reset: function() {
+		this.ok = true;
+		this.SR = 0;
+		this.reg.fill(0);
+		this.memory.reset();
+		this.data = null;
+	},
+
 	load: function(data) {
 		var i = 0;
 		for(; i < data.code.length; i++) {
-			this.memory[i] = data.code[i];
+			this.memory.setAt(i, data.code[i]);
 		}
 
 		let pos = 0;
 		for(let j = 0; j < data.data.length; j++) {
-			this.memory[i + pos] = data.data[j].value;
+			this.memory.setAt(i + pos, data.data[j].value);
 			pos += data.data[j].size;
 		}
 
 		this.data = data;
-	},
-
-	getMemoryAt: function(addr) {
-		if(addr < 0 || addr >= this.memory.length) {
-			throw new Ttk91jsRuntimeException('trying to access outside of program memory (' + addr + ')', this.oldPC);
-		}
-
-		return this.memory[addr];
-	},
-
-	setMemoryAt: function(addr, value) {
-		if(addr < 0 || addr >= this.memory.length) {
-			throw new Ttk91jsRuntimeException('trying to access outside of program memory (' + addr + ')', this.oldPC);
-		}
-
-		this.memory[addr] = value;
 	},
 
 	getRegisters: function() {
@@ -110,15 +92,6 @@ Machine.prototype = {
 		this.stdout = out;
 	},
 
-	reset: function() {
-		this.ok = true;
-		this.SR = 0;
-		this.reg.fill(0);
-		this.memory.fill(0);
-		this.data = null;
-		this.oldPC = 0;
-	},
-
 	run: function(max) {
 		max = max || -1;
 
@@ -135,7 +108,7 @@ Machine.prototype = {
 	},
 
 	isRunning: function() {
-		return this.ok && this.reg[PC] < this.memory.length;
+		return this.ok && this.reg[PC] < this.memory.size();
 	},
 
 	runWord: function(count) {
@@ -147,9 +120,11 @@ Machine.prototype = {
 	},
 
 	_runWord: function() {
-		this.oldPC = this.reg[PC];
+		let IR = this.memory.getAt(this.reg[PC]);
+
+		this.debugger.cycle(this.reg[PC], IR);
 		
-		var [op, rj, m, ri, addr] = global.splitWord(this.getMemoryAt(this.reg[PC]));
+		var [op, rj, m, ri, addr] = global.splitWord(IR);
 		var value = this._getValue(m, ri, addr);
 
 		this.reg[PC]++;
@@ -159,10 +134,10 @@ Machine.prototype = {
 				break;
 			case OP.STORE:
 				if(this.settings.triggerMemoryWrite) {
-					this.trigger('memory-write', value, this.getMemoryAt(value), this.reg[rj]);
+					this.trigger('memory-write', value, this.memory.getAt(value), this.reg[rj]);
 				}
 
-				this.setMemoryAt(value, this.reg[rj]);
+				this.memory.setAt(value, this.reg[rj]);
 
 				break;
 			case OP.LOAD:
@@ -231,9 +206,9 @@ Machine.prototype = {
 			case OP.COMP:
 				this.SR = 0;
 
-				if(this.reg[rj] == value) this.SR |= BIT_E;
-				if(this.reg[rj] > value) this.SR |= BIT_G;
-				if(this.reg[rj] < value) this.SR |= BIT_L;
+				if(this.reg[rj] == value) this.SR |= SR_BITS.E;
+				if(this.reg[rj] > value) this.SR |= SR_BITS.G;
+				if(this.reg[rj] < value) this.SR |= SR_BITS.L;
 
 				break;
 			case OP.JUMP:
@@ -255,7 +230,7 @@ Machine.prototype = {
 			case OP.JLES:
 				break;
 			case OP.JEQU:
-				if(this.SR & BIT_E) this.reg[PC] = this.getMemoryAt(addr);
+				if(this.SR & SR_BITS.E) this.reg[PC] = this.memory.getAt(addr);
 			
 				break;
 			case OP.JGRE:
@@ -263,17 +238,17 @@ Machine.prototype = {
 			case OP.JNLES:
 				break;
 			case OP.JNEQU:
-				if(!(this.SR & BIT_E)) this.reg[PC] = this.getMemoryAt(addr);
+				if(!(this.SR & SR_BITS.E)) this.reg[PC] = this.memory.getAt(addr);
 
 				break;
 			case OP.JNGRE:
 				break;
 			default:
-				throw new Ttk91jsRuntimeException('unknown opcode (' + op + ')', this.oldPC);
+				throw new Ttk91jsRuntimeException('unknown opcode (' + op + ')', this.debugger.PC);
 		}
 
 		if(this.settings.triggerRegisterWrite) {
-			this.trigger('register-write', PC, this.oldPC, this.reg[PC]);
+			this.trigger('register-write', PC, this.debugger.PC, this.reg[PC]);
 		}
 	}
 };

@@ -3,7 +3,7 @@
 'use strict';
 
 var chai = require('chai');
-var ttk91js = require('./ttk91js.js');
+var ttk91js = require('./ttk91js/ttk91js.js');
 
 var expect = chai.expect;
 
@@ -50,6 +50,20 @@ describe('Compile', function() {
 			expect(data2.code).to.deep.equal([36700161]);
 		});
 
+	});
+
+	describe('EQU, DC, DS', () => {
+		it('Symbol table', () => {
+			let data = ttk91js.compile('x EQU 1\ny DS 3\nz DC 3\n');
+			var machine = ttk91js.createMachine({memory: 5});
+			machine.load(data);
+
+			let memory = machine.getMemory();
+
+			expect(Array.from(memory.getAll())).to.deep.equal(
+				[0, 0, 0, 3, 0]
+			);
+		});
 	});
 
 	describe('Error handling', () => {
@@ -127,10 +141,10 @@ describe('Machine', function() {
 		let memory = machine1.getMemory();
 
 		it('Amount of memory', function() {
-			expect(memory.length).to.equal(memoryLimit);
+			expect(memory.size()).to.equal(memoryLimit);
 		});
 		it('Memory layout', function() {
-			expect(Array.from(memory)).to.deep.equal(
+			expect(Array.from(memory.getAll())).to.deep.equal(
 				[36175874, 69206016, 20, 10, 0, 0, 0]
 			);
 		});
@@ -144,7 +158,7 @@ describe('Machine', function() {
 
 			let memory = machine2.getMemory();
 
-			expect(memory[4]).to.equal(60);
+			expect(memory.getAt(4)).to.equal(60);
 		});
 	});
 
@@ -153,8 +167,8 @@ describe('Machine', function() {
 			it('access outside of program memory', () => {
 				let machine = ttk91js.createMachine({memory: memoryLimit});
 
-				expect(machine.getMemoryAt.bind(machine, -1)).to.throw('access');
-				expect(machine.getMemoryAt.bind(machine, memoryLimit)).to.throw('access');
+				expect(machine.memory.getAt.bind(machine.memory, -1)).to.throw('access');
+				expect(machine.memory.getAt.bind(machine.memory, memoryLimit)).to.throw('access');
 			});
 
 			it('access outside of program line number', (done) => {

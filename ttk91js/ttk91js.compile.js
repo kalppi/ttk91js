@@ -138,7 +138,7 @@ function prepare(code) {
 
 			symbols.push({
 				name: parts[0],
-				addr: instructions.length,
+				value: instructions.length,
 				type: 'absolute',
 				size: 1
 			});
@@ -147,13 +147,23 @@ function prepare(code) {
 			if(i != -1) parts = [parts[1].substring(0, i), parts[1].substring(i + 1)];
 		}
 
-		if(parts[0] == 'DC') {
+		if(parts[0] == 'EQU') {
 			let value = parseInt(parts[1]);
 			let name = symbols.pop().name;
 
 			symbols.push({
 				name: name,
-				addr: memoryPos,
+				value: value,
+				type: 'absolute',
+				size: 0
+			});
+		} else if(parts[0] == 'DC') {
+			let value = parseInt(parts[1]);
+			let name = symbols.pop().name;
+
+			symbols.push({
+				name: name,
+				value: memoryPos,
 				type: 'relative',
 				size: 1
 			});
@@ -170,7 +180,7 @@ function prepare(code) {
 			
 			symbols.push({
 				name: name,
-				addr: memoryPos,
+				value: memoryPos,
 				type: 'relative',
 				size: size
 			});
@@ -281,10 +291,10 @@ function prepare(code) {
 var compile = function(code) {
 	var data = prepare(code);
 
-	function getSymbolAddr(symbol) {
+	function getSymbolValue(symbol) {
 		for(let i = 0; i < data.symbols.length; i++) {
 			if(data.symbols[i].name == symbol) {
-				return data.symbols[i].addr;
+				return data.symbols[i].value;
 			}
 		}
 	}
@@ -298,7 +308,7 @@ var compile = function(code) {
 
 	for(let i = 0; i < data.symbols.length; i++) {
 		if(data.symbols[i].type == 'relative') {
-			data.symbols[i].addr += data.code.length;
+			data.symbols[i].value += data.code.length;
 		}
 
 		delete data.symbols[i].type;
@@ -319,7 +329,7 @@ var compile = function(code) {
 			if(isRegister(d[1])) {
 				rj = getRegister(d[1]);
 			} else {
-				rj = getSymbolAddr(d[1]);
+				rj = getSymbolValue(d[1]);
 			}
 		}
 
@@ -348,7 +358,7 @@ var compile = function(code) {
 							addr = SVC.HALT;
 							break;
 						default:
-							addr = getSymbolAddr(s);
+							addr = getSymbolValue(s);
 					}
 				}
 			} else if(d[2][0] == '@') {
@@ -356,10 +366,10 @@ var compile = function(code) {
 
 				let s = d[2].substring(1);
 
-				addr = getSymbolAddr(s);
+				addr = getSymbolValue(s);
 			} else {
 				if(/^[a-z]+$/i.test(d[2])) {
-					addr = getSymbolAddr(d[2]);
+					addr = getSymbolValue(d[2]);
 				} else {
 					addr = parseInt(d[2]);
 				}
