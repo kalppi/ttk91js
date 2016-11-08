@@ -7,6 +7,12 @@ var ttk91js = require('./ttk91js/ttk91js.js');
 
 var expect = chai.expect;
 
+/*const testProgram = ttk91js.compile('aaa222 LOAD R1,=1\nLOAD R2,aaa222');
+const testMachine = ttk91js.createMachine({memory: 10});
+testMachine.load(testProgram);
+
+return;*/
+
 describe('Compile', function() {
 	describe('Misc', () => {
 		it('Empty', () => {

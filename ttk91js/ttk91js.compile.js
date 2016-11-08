@@ -61,7 +61,7 @@ function isSymbol(s) {
 		s = s.substring(1);
 	}
 
-	return /^[a-z]+$/i.test(s);
+	return /^[a-z][0-9a-z]*$/i.test(s);
 }
 
 function isInteger(s) {
