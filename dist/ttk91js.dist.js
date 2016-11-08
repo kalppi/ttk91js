@@ -834,7 +834,7 @@ var _typeof = typeof Symbol === "function" && typeof Symbol.iterator === "symbol
 
 		module.exports = {
 			splitWord: splitWord,
-			OP: {
+			OP: Object.freeze({
 				NOP: 0,
 				STORE: 1,
 				LOAD: 2,
@@ -873,13 +873,13 @@ var _typeof = typeof Symbol === "function" && typeof Symbol.iterator === "symbol
 				PUSHR: 53,
 				POPR: 54,
 				SVC: 112
-			},
-			MODE: {
+			}),
+			MODE: Object.freeze({
 				IMMEDIATE: 0,
 				DIRECT: 1,
 				INDIRECT: 2
-			},
-			SR_BITS: {
+			}),
+			SR_BITS: Object.freeze({
 				G: 1,
 				E: 2,
 				L: 4,
@@ -891,7 +891,7 @@ var _typeof = typeof Symbol === "function" && typeof Symbol.iterator === "symbol
 				SVC: 256,
 				PRIVILEGED: 512,
 				INTERRUPTS_DISABLED: 1024
-			}
+			})
 		};
 	}, {}], 7: [function (require, module, exports) {
 		'use strict';
@@ -1398,7 +1398,7 @@ var _typeof = typeof Symbol === "function" && typeof Symbol.iterator === "symbol
 			OPSV[common.OP[op]] = op;
 		}
 
-		function wordToString(word) {
+		function wordToSymbolic(word) {
 			var _common$splitWord = common.splitWord(word),
 			    _common$splitWord2 = _slicedToArray(_common$splitWord, 5),
 			    op = _common$splitWord2[0],
@@ -1442,7 +1442,7 @@ var _typeof = typeof Symbol === "function" && typeof Symbol.iterator === "symbol
 		};
 
 		var ttk91js = {
-			wordToString: wordToString,
+			wordToSymbolic: wordToSymbolic,
 			compile: compile,
 			createMachine: function createMachine(settings) {
 				return new Machine(settings);
@@ -1482,7 +1482,7 @@ var _typeof = typeof Symbol === "function" && typeof Symbol.iterator === "symbol
 
 			function Machine(settings) {
 				this.settings = settings;
-				this.memory = new Memory(this, settings.memory);
+				this.memory = Object.freeze(new Memory(this, settings.memory));
 				this.reg = new Uint32Array(9);
 
 				this.stdout = {
