@@ -2,7 +2,7 @@
 
 Can be used as a node module, and also in browser with included distributions.
 
-##Example
+## Example
 ```js
 var ttk91js = require('ttk91js');
 
